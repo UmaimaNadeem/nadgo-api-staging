@@ -101,6 +101,65 @@ class ProductService
         }
     }
 
+    /**
+     * Stock check + subtract for manual (admin) orders. Call INSIDE the open transaction.
+     *
+     *  - Locks each variant row (SELECT ... FOR UPDATE) so two people can't oversell at once.
+     *  - stock_quantity NULL  = "unlimited / not tracked": nothing is checked or subtracted.
+     *  - stock_quantity 0..N  = tracked: throws if there isn't enough, otherwise subtracts.
+     *  - Unknown / inactive SKU: skipped (custom items have no SKU).
+     *  - Same SKU on several lines is added up before checking.
+     *  - No price check: manual orders may use special prices.
+     *
+     * Returns a report per SKU so the admin can see exactly what happened:
+     *   [['sku'=>..,'name'=>..,'status'=>'deducted'|'untracked'|'not_found','before'=>?int,'after'=>?int,'qty'=>int], ...]
+     * On a shortage it throws ValidationException (the caller rolls the whole order back).
+     */
+    public function reserveStock(array $items): array
+    {
+        $need = [];
+        foreach ($items as $item) {
+            $sku = trim($item['sku'] ?? '');
+            if ($sku === '') continue;
+            $need[$sku] = ($need[$sku] ?? 0) + max(1, (int)($item['quantity'] ?? 1));
+        }
+
+        $pdo = $this->db->pdo();
+        $sel = $pdo->prepare(
+            'SELECT id, label, stock_quantity FROM product_variants
+              WHERE sku = :sku AND is_active = 1 LIMIT 1 FOR UPDATE'
+        );
+        $upd = $pdo->prepare('UPDATE product_variants SET stock_quantity = :after WHERE id = :id');
+
+        $report = [];
+        foreach ($need as $sku => $qty) {
+            $sel->execute([':sku' => $sku]);
+            $v = $sel->fetch();
+            if (!$v) {
+                $report[] = ['sku' => $sku, 'name' => $sku, 'status' => 'not_found', 'before' => null, 'after' => null, 'qty' => $qty];
+                continue;
+            }
+            $name = ($v['label'] ?? '') !== '' ? $v['label'] : $sku;
+
+            if ($v['stock_quantity'] === null) {
+                $report[] = ['sku' => $sku, 'name' => $name, 'status' => 'untracked', 'before' => null, 'after' => null, 'qty' => $qty];
+                continue;
+            }
+
+            $before = (int) $v['stock_quantity'];
+            if ($before < $qty) {
+                throw new ValidationException(
+                    $before <= 0 ? "{$name} is out of stock (stock 0)."
+                                 : "Only {$before} unit(s) of {$name} in stock, but {$qty} requested."
+                );
+            }
+            $after = $before - $qty;
+            $upd->execute([':after' => $after, ':id' => (int) $v['id']]);
+            $report[] = ['sku' => $sku, 'name' => $name, 'status' => 'deducted', 'before' => $before, 'after' => $after, 'qty' => $qty];
+        }
+        return $report;
+    }
+
     // =========================================================================
     // "Notify me" interest (logged-in customers only)
     // =========================================================================

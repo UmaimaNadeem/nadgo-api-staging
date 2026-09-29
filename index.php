@@ -16,6 +16,7 @@
  *   Coupons:   validate_coupon (public)
  *              admin_list_coupons | admin_save_coupon | admin_delete_coupon
  *   Admin:     admin_list_orders | admin_verify_payment
+ *              admin_create_order | admin_search_customers   (manual orders)
  *              admin_update_delivery | admin_get_receipt | admin_test_email
  *              admin_list_products | admin_save_product | admin_save_variant | admin_adjust_stock
  *              admin_create_shipment
@@ -558,6 +559,19 @@ try {
                 ($_GET['delivery_status'] ?? '') ?: null,
                 (int) ($_GET['limit'] ?? 100)
             )]);
+
+        case 'admin_search_customers':
+            requireAdmin($auth);
+            respond(200, ['ok' => true, 'customers' => $service->adminSearchCustomers(
+                (string) ($_GET['q'] ?? ''),
+                (int) ($_GET['limit'] ?? 10)
+            )]);
+
+        case 'admin_create_order':
+            requirePost();
+            requireAdmin($auth);
+            $b = jsonBody();
+            respond(201, ['ok' => true] + $service->adminCreateManualOrder($b, $clientIp));
 
         case 'admin_verify_payment':
             requirePost();
