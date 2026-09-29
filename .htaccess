@@ -1,0 +1,19 @@
+# Serve the API router (which also renders the admin page on GET /) as the index.
+DirectoryIndex index.php
+
+# Route everything to index.php (so the API works at the folder root).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>
+
+# Never serve sensitive files directly.
+<FilesMatch "(^config\.php$|\.sql$|^\.git)">
+    Require all denied
+</FilesMatch>
+
+# Block direct web access to internal folders and the git metadata
+# (the repo is cloned into the web root, so .git/ must never be served).
+RedirectMatch 403 ^/?(src|lib|sql|uploads|\.git)(/|$)

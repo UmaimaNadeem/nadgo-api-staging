@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Nadgo · Admin</title>
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('nadgo_theme') || 'light');</script>
+<style>
+  :root, :root[data-theme="light"]{
+    --bg:#f5f6fb; --surface:#ffffff; --surface-2:#f1f3f9; --border:#e7eaf2;
+    --text:#131a2b; --text-2:#616b85; --primary:#0F2057; --primary-2:#1b3a8f;
+    --on-primary:#ffffff; --ring:rgba(15,32,87,.14);
+    --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+    --shadow-lg:0 18px 40px rgba(16,24,40,.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0a0d16; --surface:#121726; --surface-2:#1a2132; --border:#262e42;
+    --text:#e8ebf4; --text-2:#9aa4bd; --primary:#5b8cff; --primary-2:#7aa2ff;
+    --on-primary:#0a0d16; --ring:rgba(91,140,255,.25);
+    --shadow:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 50px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  a{color:var(--primary)}
+  button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:9px 14px;
+    background:var(--primary);color:var(--on-primary);font-weight:600;transition:.15s;}
+  button:hover{filter:brightness(1.06)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.45;cursor:default;transform:none}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .btn-ghost:hover{background:var(--surface-2);filter:none}
+  .btn-soft{background:var(--surface-2);color:var(--text)}
+  .btn-danger{background:#dc2b3d;color:#fff}
+  .btn-sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+  .icon-btn{width:38px;height:38px;display:grid;place-items:center;padding:0;
+    background:transparent;border:1px solid var(--border);color:var(--text);border-radius:10px}
+  .icon-btn:hover{background:var(--surface-2);filter:none}
+  input,select,textarea{width:100%;background:var(--surface);color:var(--text);
+    border:1px solid var(--border);border-radius:10px;padding:10px 12px;font:inherit;outline:none;transition:.15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--ring)}
+  label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin:0 0 6px}
+  .muted{color:var(--text-2)}
+  .hide{display:none!important}
+
+  /* Login */
+  .login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;
+    background:radial-gradient(1200px 500px at 50% -10%, var(--surface-2), transparent);}
+  .login-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;padding:30px;box-shadow:var(--shadow-lg)}
+  .login-card .logo{height:42px;display:block;margin:0 auto 6px}
+  .login-card h1{font-size:19px;text-align:center;margin:8px 0 2px}
+  .login-card p{text-align:center;margin:0 0 18px}
+  .field{margin-bottom:14px}
+  .login-card .full{width:100%;justify-content:center;display:flex}
+
+  /* App shell */
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+    height:62px;padding:0 22px;background:var(--surface);
+    background:color-mix(in srgb,var(--surface) 88%, transparent);
+    backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--border)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+  .brand img{height:28px;display:block}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--primary)}
+  .topbar .spacer{flex:1}
+  .container{max-width:1180px;margin:0 auto;padding:22px}
+
+  /* Stat cards */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+  .stat .label{font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.05em}
+  .stat .value{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+  .stat .value small{font-size:13px;font-weight:600;color:var(--text-2)}
+  .stat.accent{background:linear-gradient(135deg,var(--primary),var(--primary-2));border:0;color:var(--on-primary)}
+  .stat.accent .label{color:color-mix(in srgb,var(--on-primary) 80%,transparent)}
+
+  /* Card + toolbar */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px}
+  .toolbar .search{position:relative;flex:1;min-width:200px}
+  .toolbar .search input{padding-left:36px}
+  .toolbar .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.5}
+  .toolbar select{width:auto;min-width:150px}
+
+  /* Table */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:720px}
+  thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:12px;
+    text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);font-weight:700;padding:11px 16px;border-bottom:1px solid var(--border)}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr{cursor:pointer;transition:background .12s}
+  tbody tr:hover{background:var(--surface-2)}
+  tbody tr:last-child td{border-bottom:0}
+  .cust{display:flex;align-items:center;gap:11px}
+  .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;
+    font-size:13px;color:#fff;flex:none}
+  .cust .nm{font-weight:600;line-height:1.2}
+  .cust .em{font-size:12px;color:var(--text-2)}
+  .ref{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;font-size:13px}
+  .amt{font-weight:700;white-space:nowrap}
+  .when{color:var(--text-2);white-space:nowrap;font-size:12.5px}
+
+  /* Pills */
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    font-size:12px;font-weight:700;line-height:1;white-space:nowrap}
+  .pill .d{width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill.s-pending{color:#9a6b00;background:#fff3d6}
+  .pill.s-submitted{color:#0b5cad;background:#dcedff}
+  .pill.s-paid,.pill.s-delivered{color:#0a7a3d;background:#d8f5e3}
+  .pill.s-rejected,.pill.s-cancelled{color:#b42318;background:#ffe2de}
+  .pill.s-processing{color:#5b34c7;background:#ece4ff}
+  .pill.s-shipped{color:#0e7490;background:#d6f3f8}
+  .pill.s-partial{color:#c2460a;background:#fff0e0}
+  :root[data-theme="dark"] .pill.s-pending{color:#ffd87a;background:#3a2f10}
+  :root[data-theme="dark"] .pill.s-submitted{color:#8cc0ff;background:#11304f}
+  :root[data-theme="dark"] .pill.s-paid,:root[data-theme="dark"] .pill.s-delivered{color:#79e6a4;background:#103a24}
+  :root[data-theme="dark"] .pill.s-rejected,:root[data-theme="dark"] .pill.s-cancelled{color:#ff9a90;background:#3a1714}
+  :root[data-theme="dark"] .pill.s-processing{color:#c3b1ff;background:#241a4d}
+  :root[data-theme="dark"] .pill.s-shipped{color:#7fdcea;background:#0c333b}
+  :root[data-theme="dark"] .pill.s-partial{color:#ffb07a;background:#3a1f08}
+
+  /* States */
+  .state{padding:48px 16px;text-align:center;color:var(--text-2)}
+  .spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--primary);
+    border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Drawer */
+  .overlay{position:fixed;inset:0;background:rgba(8,12,22,.45);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+  .overlay.show{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:520px;max-width:94vw;background:var(--bg);
+    border-left:1px solid var(--border);box-shadow:var(--shadow-lg);transform:translateX(100%);
+    transition:transform .25s cubic-bezier(.4,0,.2,1);z-index:50;display:flex;flex-direction:column}
+  .drawer.show{transform:none}
+  .drawer-head{display:flex;align-items:center;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .drawer-head h2{margin:0;font-size:16px}
+  .drawer-head .ref{color:var(--text-2)}
+  .drawer-body{padding:20px;overflow:auto;flex:1}
+  .sec{margin-bottom:22px}
+  .sec h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);margin:0 0 10px}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+  .kv .k{color:var(--text-2)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .li{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+  .li:last-child{border-bottom:0}
+  .li .thumb{width:42px;height:42px;border-radius:9px;object-fit:cover;background:var(--surface-2);flex:none}
+  .li .nm{font-weight:600}
+  .li .vr{font-size:12px;color:var(--text-2)}
+  .li .ln{margin-left:auto;text-align:right;white-space:nowrap}
+  .tot .kv{font-size:14px}
+  .tot .grand{border-top:1px solid var(--border);margin-top:6px;padding-top:8px;font-weight:800;font-size:15px}
+  .pay{border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px}
+  .pay .row1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .pay .tx{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text-2);word-break:break-all}
+  .actions-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .err{color:#dc2b3d;font-size:13px;min-height:16px;margin-top:6px}
+
+  /* Toasts */
+  .toasts{position:fixed;top:16px;right:16px;z-index:60;display:flex;flex-direction:column;gap:10px}
+  .toast{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);
+    border-radius:10px;padding:12px 16px;box-shadow:var(--shadow-lg);min-width:240px;max-width:360px;
+    animation:slidein .2s ease}
+  .toast.ok{border-left-color:#0a7a3d}
+  .toast.bad{border-left-color:#dc2b3d}
+  @keyframes slidein{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+  @media(max-width:640px){.container{padding:14px}.topbar{padding:0 14px}}
+
+  /* Tab navigation */
+  .tab-nav{display:flex;gap:8px;margin-bottom:16px}
+  .tab-btn{padding:8px 18px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;transition:.15s}
+  .tab-btn:hover{background:var(--surface-2);color:var(--text);filter:none}
+  .tab-btn.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary)}
+
+  /* Variant edit modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(8,12,22,.45);z-index:54;display:none}
+  .modal-bg.show{display:block}
+  .modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:440px;max-width:94vw;
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;z-index:55;
+    box-shadow:var(--shadow-lg);display:none}
+  .modal.show{display:block}
+  .modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .modal-head h2{margin:0;font-size:15px;flex:1}
+  .modal-body{padding:20px}
+  .modal-body .field{margin-bottom:14px}
+  .prod-name{font-weight:700;font-size:13px}
+  .prod-cat{font-size:12px;color:var(--text-2);margin-bottom:6px}
+  .stock-cell{display:flex;align-items:center;gap:6px}
+  .stock-adj{display:flex;align-items:center;gap:4px}
+  .stock-adj input{width:64px;text-align:center;padding:6px 8px}
+  td.inactive-row{opacity:.5}
+  .toolbar-title{font-weight:700;font-size:15px}
+  .toolbar-spacer{flex:1}
+  .modal-check-row{display:flex;align-items:center;gap:10px}
+  .modal-check-row input[type=checkbox]{width:auto}
+  .modal-check-row label{margin:0}
+  .actions-nowrap{flex-wrap:nowrap}
+
+  /* Royal Mail modal — wider to fit address grid */
+  #rmModal{width:530px}
+  .btn-rm{background:#0e7490;color:#fff}
+  .btn-rm:hover{filter:brightness(1.1)}
+  .rm-addr-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .rm-addr-grid .span2{grid-column:span 2}
+  .rm-result{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:12px}
+  .rm-result .rm-tracking{font-family:ui-monospace,Menlo,monospace;font-size:14px;font-weight:700;color:var(--primary);margin-top:4px}
+  .rm-result .rm-id{font-size:12px;color:var(--text-2);margin-top:2px}
+  .rm-hint{margin:0 0 14px;font-size:13px}
+  .rm-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px}
+  .rm-section-label+.rm-addr-grid{margin-top:0}
+  .rm-section-label.mt{margin-top:14px}
+  .rm-optional{font-weight:400}
+  .kv.disc span:last-child{color:var(--success,#16a34a)}
+  .cp-two-col{grid-template-columns:1fr 1fr}
+  .cp-code-input{text-transform:uppercase}
+  .btn-xs{padding:4px 8px;font-size:12px;border-radius:6px}
+  .cp-sub{font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login-screen">
+  <div class="login-card">
+    <img class="logo" src="assets/logo.png" alt="Nadgo" onerror="this.style.display='none'">
+    <h1>Admin sign in</h1>
+    <p class="muted">Enter your admin token to continue.</p>
+    <div class="field"><label>API base URL</label><input id="apiBase" placeholder="https://api.nad-go.com/"></div>
+    <div class="field"><label>Admin token</label><input id="apiKey" type="password" placeholder="X-Admin-Key" autocomplete="off"></div>
+    <div class="err" id="loginErr"></div>
+    <button class="full" id="loginBtn" style="width:100%">Sign in</button>
+    <button class="btn-ghost full" id="themeToggleLogin" style="width:100%;margin-top:10px">Toggle theme</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hide">
+  <div class="topbar">
+    <div class="brand"><img src="assets/logo.png" alt="" onerror="this.style.display='none'"><span class="dot"></span>Nadgo Admin</div>
+    <div class="spacer"></div>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="btn-ghost" id="logout">Log out</button>
+  </div>
+
+  <div class="container">
+    <div class="stats" id="stats"></div>
+
+    <div class="tab-nav">
+      <button type="button" class="tab-btn active" id="tabOrders">Orders</button>
+      <button type="button" class="tab-btn" id="tabProducts">Products</button>
+      <button type="button" class="tab-btn" id="tabShipping">Shipping</button>
+      <button type="button" class="tab-btn" id="tabCoupons">Coupons</button>
+      <button type="button" class="tab-btn" id="tabContact">Contact</button>
+      <button type="button" class="tab-btn" id="tabNotify">Notify Me</button>
+    </div>
+
+    <!-- ORDERS VIEW -->
+    <div id="ordersView">
+    <div class="card">
+      <div class="toolbar">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+          <input id="search" placeholder="Search ref, name, email…">
+        </div>
+        <select id="fPay"><option value="">All payments</option><option>pending</option><option>submitted</option><option>paid</option><option>rejected</option></select>
+        <select id="fDel"><option value="">All delivery</option><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select>
+        <select id="fLimit"><option value="100">100</option><option value="250">250</option><option value="500">500</option></select>
+        <button class="btn-soft" id="refresh">↻ Refresh</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Payment</th><th>Delivery</th><th>Date</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div id="tableState" class="state hide"></div>
+    </div>
+    </div><!-- /ordersView -->
+
+    <!-- PRODUCTS VIEW -->
+    <div id="productsView" class="hide">
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-title">Products &amp; Inventory</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="btn-soft" id="refreshProducts">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Product</th><th>SKU</th><th>Variant</th><th>Price</th><th>Sale Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="prodRows"></tbody>
+          </table>
+        </div>
+        <div id="prodState" class="state hide"></div>
+      </div>
+    </div><!-- /productsView -->
+
+    <!-- SHIPPING VIEW -->
+    <div id="shippingView" class="hide">
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-title">Shipping Rates</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" id="addShippingBtn">+ Add Rate</button>
+          <button type="button" class="btn-soft" id="refreshShipping">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Country</th><th>Method</th><th>Flat Rate</th><th>Free Shipping From</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="shipRows"></tbody>
+          </table>
+        </div>
+        <div id="shipState" class="state hide"></div>
+      </div>
+    </div><!-- /shippingView -->
+
+    <!-- COUPONS VIEW -->
+    <div id="couponsView" class="hide">
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-title">Coupon Codes</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" id="addCouponBtn">+ Add Coupon</button>
+          <button type="button" class="btn-soft" id="refreshCoupons">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Uses</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="couponRows"></tbody>
+          </table>
+        </div>
+        <div id="couponState" class="state hide"></div>
+      </div>
+    </div><!-- /couponsView -->
+
+    <!-- CONTACT VIEW -->
+    <div id="contactView" class="hide">
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-title">Contact Submissions</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="btn-soft" id="refreshContact">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Country</th><th>Product interest</th><th>Message</th><th>Date</th></tr></thead>
+            <tbody id="contactRows"></tbody>
+          </table>
+        </div>
+        <div id="contactState" class="state hide"></div>
+      </div>
+    </div><!-- /contactView -->
+
+    <!-- NOTIFY ME VIEW -->
+    <div id="notifyView" class="hide">
+      <div class="card">
+        <div class="toolbar">
+          <span class="toolbar-title">"Notify Me" Requests</span>
+          <div class="toolbar-spacer"></div>
+          <button type="button" class="btn-soft" id="refreshNotify">↻ Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Product</th><th>Customer email</th><th>Status</th><th>Requested</th></tr></thead>
+            <tbody id="notifyRows"></tbody>
+          </table>
+        </div>
+        <div id="notifyState" class="state hide"></div>
+      </div>
+    </div><!-- /notifyView -->
+
+  </div><!-- /container -->
+</div><!-- /app -->
+
+<!-- DRAWER -->
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div><h2 id="dRef" class="ref"></h2><div class="muted" id="dWhen"></div></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="icon-btn" id="dClose">✕</button>
+  </div>
+  <div class="drawer-body" id="dBody"></div>
+</aside>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- SHIPPING RATE MODAL -->
+<div class="modal-bg" id="smBg"></div>
+<div class="modal" id="smModal">
+  <div class="modal-head">
+    <h2 id="smTitle">Add Shipping Rate</h2>
+    <button type="button" class="icon-btn" id="smClose">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="field">
+      <label>Country <span class="muted" style="font-weight:400">(use "default" as the fallback for all unlisted countries)</span></label>
+      <input type="text" id="smCountry" list="smCountryList" placeholder="e.g. United Kingdom">
+      <datalist id="smCountryList">
+        <option value="default">
+        <option value="United Kingdom">
+        <option value="Ireland">
+        <option value="United States">
+        <option value="Canada">
+        <option value="Australia">
+        <option value="Germany">
+        <option value="France">
+        <option value="Spain">
+        <option value="Italy">
+        <option value="Netherlands">
+        <option value="United Arab Emirates">
+      </datalist>
+    </div>
+    <div class="field"><label>Shipping method name</label><input type="text" id="smMethodName" placeholder="e.g. Royal Mail Tracked 24 (upto £75 Compensation)"></div>
+    <div class="field"><label>Method code <span class="muted" style="font-weight:400">(unique per country)</span></label><input type="text" id="smMethodCode" placeholder="e.g. royal_mail_tracked_24_75"></div>
+    <div class="field"><label>Flat rate (£)</label><input type="number" id="smRate" step="0.01" min="0" placeholder="0.00"></div>
+    <div class="field"><label>Free shipping from (£) — leave blank to never offer free shipping</label><input type="number" id="smThresh" step="0.01" min="0" placeholder="e.g. 50"></div>
+    <div class="field modal-check-row"><input type="checkbox" id="smActive" checked><label for="smActive">Active (shown in checkout)</label></div>
+    <div class="actions-row">
+      <button type="button" id="smSave">Save rate</button>
+      <button type="button" class="btn-ghost" id="smCancel">Cancel</button>
+    </div>
+    <div class="err" id="smErr"></div>
+  </div>
+</div>
+
+<!-- COUPON MODAL -->
+<div class="modal-bg" id="cpBg"></div>
+<div class="modal" id="cpModal">
+  <div class="modal-head">
+    <h2 id="cpTitle">Add Coupon</h2>
+    <button type="button" class="icon-btn" id="cpClose">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="field"><label>Code</label><input type="text" id="cpCode" placeholder="e.g. WELCOME10" class="cp-code-input"></div>
+    <div class="field"><label>Description (shown to customer on apply)</label><input type="text" id="cpDesc" placeholder="e.g. 10% off your first order"></div>
+    <div class="rm-addr-grid cp-two-col">
+      <div class="field">
+        <label>Discount type</label>
+        <select id="cpType">
+          <option value="percent">Percent (%)</option>
+          <option value="fixed">Fixed amount (£)</option>
+        </select>
+      </div>
+      <div class="field"><label>Discount value</label><input type="number" id="cpValue" step="0.01" min="0.01" placeholder="e.g. 10"></div>
+    </div>
+    <div class="rm-addr-grid cp-two-col">
+      <div class="field"><label>Min order (£) — leave blank for none</label><input type="number" id="cpMin" step="0.01" min="0" placeholder="None"></div>
+      <div class="field"><label>Max uses — leave blank for unlimited</label><input type="number" id="cpMax" step="1" min="1" placeholder="Unlimited"></div>
+    </div>
+    <div class="field"><label>Per customer limit — leave blank for unlimited (e.g. 1 = first order only)</label><input type="number" id="cpPerCustomer" step="1" min="1" placeholder="Unlimited"></div>
+    <div class="rm-addr-grid cp-two-col">
+      <div class="field"><label>Active from (optional)</label><input type="datetime-local" id="cpFrom"></div>
+      <div class="field"><label>Active until (optional)</label><input type="datetime-local" id="cpUntil"></div>
+    </div>
+    <div class="field modal-check-row"><input type="checkbox" id="cpActive" checked><label for="cpActive">Active</label></div>
+    <div class="actions-row">
+      <button type="button" id="cpSave">Save coupon</button>
+      <button type="button" class="btn-ghost" id="cpCancel">Cancel</button>
+    </div>
+    <div class="err" id="cpErr"></div>
+  </div>
+</div>
+
+<!-- VARIANT EDIT MODAL -->
+<div class="modal-bg" id="vmBg"></div>
+<div class="modal" id="vmModal">
+  <div class="modal-head">
+    <h2 id="vmTitle">Edit Variant</h2>
+    <button type="button" class="icon-btn" id="vmClose">✕</button>
+  </div>
+  <div class="modal-body">
+    <div class="field"><label>SKU</label><input type="text" id="vmSku" placeholder="e.g. NMN-PEN-STD"></div>
+    <div class="field"><label>Dosage — optional</label><input type="text" id="vmDosage" placeholder="e.g. 500mg"></div>
+    <div class="field"><label>Purchase type — optional</label><input type="text" id="vmPurchaseType" placeholder="e.g. One-time purchase"></div>
+    <div class="field"><label>Label — optional</label><input type="text" id="vmLabel" placeholder="e.g. Starter Pack"></div>
+    <div class="field"><label>Price (£)</label><input type="number" id="vmPrice" step="0.01" min="0.01"></div>
+    <div class="field"><label>Sale Price (£) — leave blank to remove</label><input type="number" id="vmSale" step="0.01" min="0" placeholder="No sale"></div>
+    <div class="field"><label>Stock quantity — leave blank for unlimited</label><input type="number" id="vmStock" min="0" placeholder="Unlimited"></div>
+    <div class="field modal-check-row"><input type="checkbox" id="vmActive"><label for="vmActive">Active (visible on storefront)</label></div>
+    <div class="actions-row">
+      <button type="button" id="vmSave">Save changes</button>
+      <button type="button" class="btn-ghost" id="vmCancel">Cancel</button>
+    </div>
+    <div class="err" id="vmErr"></div>
+  </div>
+</div>
+
+<!-- ROYAL MAIL CREATE DELIVERY MODAL -->
+<div class="modal-bg" id="rmBg"></div>
+<div class="modal" id="rmModal">
+  <div class="modal-head">
+    <h2>📦 Create Royal Mail Delivery</h2>
+    <button type="button" class="icon-btn" id="rmClose">✕</button>
+  </div>
+  <div class="modal-body">
+    <p class="muted rm-hint">Verify the delivery address and shipment details below, then click <strong>Create Delivery</strong> to submit to Royal Mail Click &amp; Drop.</p>
+
+    <p class="muted rm-section-label">Delivery address</p>
+    <div class="rm-addr-grid">
+      <div class="field span2"><label>Full name</label><input type="text" id="rmName"></div>
+      <div class="field span2"><label>Address line 1</label><input type="text" id="rmLine1"></div>
+      <div class="field span2"><label>Address line 2 <span class="muted rm-optional">(optional)</span></label><input type="text" id="rmLine2" placeholder="Flat, suite, building…"></div>
+      <div class="field"><label>City / Town</label><input type="text" id="rmCity"></div>
+      <div class="field"><label>Postcode</label><input type="text" id="rmPostcode"></div>
+      <div class="field span2"><label>Country</label><input type="text" id="rmCountry"></div>
+    </div>
+
+    <p class="muted rm-section-label mt">Shipment details</p>
+    <div class="rm-addr-grid">
+      <div class="field">
+        <label>Service</label>
+        <select id="rmService">
+          <option value="">Auto-select (account default)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Package format</label>
+        <select id="rmFormat">
+          <option value="smallParcel">Small Parcel</option>
+          <option value="mediumParcel">Medium Parcel</option>
+          <option value="largeLetter">Large Letter</option>
+          <option value="letter">Letter</option>
+          <option value="parcel">Parcel</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Weight (grams)</label>
+        <input type="number" id="rmWeight" min="1" max="30000" value="500">
+      </div>
+    </div>
+
+    <div id="rmResult" class="hide"></div>
+
+    <div class="actions-row" id="rmActions">
+      <button type="button" id="rmSubmit" class="btn-rm">Create Delivery</button>
+      <button type="button" class="btn-ghost" id="rmCancel">Cancel</button>
+    </div>
+    <div class="err" id="rmErr"></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = n => (String(n||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('') || '?').toUpperCase();
+const avatarColor = s => { let h=0; for(const c of String(s||'')) h=(h*31+c.charCodeAt(0))%360; return `hsl(${h} 55% 45%)`; };
+const fmtMoney = (v,cur) => { try { return new Intl.NumberFormat('en-GB',{style:'currency',currency:cur||'GBP'}).format(+v||0); } catch { return (+v||0).toFixed(2)+' '+(cur||''); } };
+const fmtDate = s => { if(!s) return '—'; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?esc(s):d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); };
+const pill = s => `<span class="pill s-${esc(s)}"><span class="d"></span>${esc(s)}</span>`;
+
+let BASE = localStorage.getItem('nadgo_base') || (location.origin + '/');
+let KEY  = localStorage.getItem('nadgo_key') || '';
+let ORDERS = {};
+
+function toast(msg, type='') {
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type==='ok'?'ok':type==='bad'?'bad':'');
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 3200);
+}
+
+async function api(action, { method='GET', json=null } = {}) {
+  const opts = { method, headers: { 'X-Admin-Key': KEY } };
+  if (json) { opts.headers['Content-Type']='application/json'; opts.body=JSON.stringify(json); }
+  const res = await fetch(BASE + '?action=' + action, opts);
+  let data=null; try { data = await res.json(); } catch {}
+  if (!res.ok) { const e=new Error((data&&data.error)||('HTTP '+res.status)); e.status=res.status; throw e; }
+  return data;
+}
+
+// theme
+function applyTheme(t){ document.documentElement.setAttribute('data-theme',t);
+  const b=$('#themeToggle'); if(b) b.textContent = t==='dark'?'☀️':'🌙'; localStorage.setItem('nadgo_theme',t); }
+const toggleTheme = ()=> applyTheme((document.documentElement.getAttribute('data-theme')||'light')==='dark'?'light':'dark');
+$('#themeToggle').onclick = toggleTheme;
+$('#themeToggleLogin').onclick = toggleTheme;
+applyTheme(localStorage.getItem('nadgo_theme')||'light');
+
+// login
+$('#apiBase').value = BASE; $('#apiKey').value = KEY;
+$('#loginBtn').onclick = async () => {
+  BASE = $('#apiBase').value.trim() || (location.origin+'/');
+  KEY  = $('#apiKey').value.trim();
+  $('#loginErr').textContent='';
+  $('#loginBtn').disabled = true; $('#loginBtn').textContent='Signing in…';
+  try {
+    await api('admin_list_orders');
+    localStorage.setItem('nadgo_base',BASE); localStorage.setItem('nadgo_key',KEY);
+    showApp();
+  } catch(e){
+    $('#loginErr').textContent = (e.status===401||/authoriz/i.test(e.message)) ? 'Invalid admin token.' : e.message;
+  } finally { $('#loginBtn').disabled=false; $('#loginBtn').textContent='Sign in'; }
+};
+$('#logout').onclick = ()=>{ localStorage.removeItem('nadgo_key'); KEY=''; location.reload(); };
+
+function showApp(){ $('#login').classList.add('hide'); $('#app').classList.remove('hide'); loadOrders(); }
+
+// filters
+$('#refresh').onclick = loadOrders;
+$('#fPay').onchange = loadOrders;
+$('#fDel').onchange = loadOrders;
+$('#fLimit').onchange = loadOrders;
+let searchT; $('#search').oninput = ()=>{ clearTimeout(searchT); searchT=setTimeout(renderRows,150); };
+
+function setState(html){ const s=$('#tableState'); if(html){ s.innerHTML=html; s.classList.remove('hide'); } else s.classList.add('hide'); }
+
+async function loadOrders(){
+  $('#rows').innerHTML=''; setState('<div class="spinner"></div>Loading orders…');
+  const qs=['limit='+($('#fLimit').value||100)];
+  if($('#fPay').value) qs.push('payment_status='+$('#fPay').value);
+  if($('#fDel').value) qs.push('delivery_status='+$('#fDel').value);
+  try{
+    const data = await api('admin_list_orders&'+qs.join('&'));
+    const list = data.orders||[];
+    ORDERS = Object.fromEntries(list.map(o=>[o.order_ref,o]));
+    renderStats(list);
+    renderRows();
+  }catch(e){
+    if(e.status===401){ return $('#logout').click(); }
+    setState('⚠️ '+esc(e.message));
+  }
+}
+
+function renderStats(list){
+  const cur = list[0]?.currency || 'GBP';
+  const n = s => list.filter(o=>o.payment_status===s).length;
+  const revenue = list.filter(o=>o.payment_status==='paid').reduce((a,o)=>a+(+o.total_amount||0),0);
+  const cards = [
+    {label:'Total orders', value:list.length},
+    {label:'Awaiting verification', value:n('submitted')},
+    {label:'Pending payment', value:n('pending')},
+    {label:'Revenue (paid)', value:fmtMoney(revenue,cur), accent:true},
+  ];
+  $('#stats').innerHTML = cards.map(c=>
+    `<div class="stat ${c.accent?'accent':''}"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`).join('');
+}
+
+function renderRows(){
+  const q = $('#search').value.trim().toLowerCase();
+  let list = Object.values(ORDERS);
+  if(q) list = list.filter(o => [o.order_ref,o.customer_name,o.customer_email].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(!list.length){ $('#rows').innerHTML=''; setState('No orders match.'); return; }
+  setState('');
+  $('#rows').innerHTML = list.map(o=>`
+    <tr data-ref="${esc(o.order_ref)}">
+      <td><span class="ref">${esc(o.order_ref)}</span></td>
+      <td><div class="cust">
+        <div class="avatar" style="background:${avatarColor(o.customer_email)}">${esc(initials(o.customer_name))}</div>
+        <div><div class="nm">${esc(o.customer_name||'—')}</div><div class="em">${esc(o.customer_email||'')}</div></div>
+      </div></td>
+      <td class="amt">${fmtMoney(o.total_amount,o.currency)}</td>
+      <td>${pill(o.payment_status)}</td>
+      <td>${pill(o.delivery_status)}</td>
+      <td class="when">${fmtDate(o.created_at)}</td>
+    </tr>`).join('');
+  document.querySelectorAll('#rows tr').forEach(tr=> tr.onclick=()=>openDrawer(tr.dataset.ref));
+}
+
+// drawer
+function openDrawer(ref){
+  const o = ORDERS[ref]; if(!o) return;
+  $('#dRef').textContent = o.order_ref;
+  $('#dWhen').textContent = fmtDate(o.created_at);
+  const a = o.shipping_address||{};
+  const addr = [a.address1,a.address2,[a.city,a.postcode].filter(Boolean).join(' '),a.country].filter(Boolean).map(esc).join('<br>');
+  const items = (o.items||[]).map(i=>`
+    <div class="li">
+      ${i.image_url?`<img class="thumb" src="${esc(i.image_url)}" alt="">`:`<div class="thumb"></div>`}
+      <div><div class="nm">${esc(i.product_name)}</div>${i.variant?`<div class="vr">${esc(i.variant)}</div>`:''}</div>
+      <div class="ln">${esc(i.quantity)} × ${fmtMoney(i.unit_price,o.currency)}<br><strong>${fmtMoney(i.line_total,o.currency)}</strong></div>
+    </div>`).join('') || '<div class="muted">No items.</div>';
+  const pays = (o.payments||[]).map(p=>`
+    <div class="pay">
+      <div class="row1">${pill(p.status)} <strong>${esc(p.method||'')}</strong>
+        <span style="margin-left:auto">${p.amount?(p.method==='crypto'?`${(+p.amount).toFixed(2)} USDT`:fmtMoney(p.amount,o.currency)):''}</span></div>
+      ${p.crypto_network?`<div class="muted" style="font-size:12px;margin-top:2px">Network: <strong>${esc(p.crypto_network)}</strong></div>`:''}
+      ${p.crypto_rate?`<div class="muted" style="font-size:12px;margin-top:2px">Rate at submission: 1 USDT = £${parseFloat(p.crypto_rate).toFixed(4)} &nbsp;·&nbsp; GBP equiv. ≈ ${fmtMoney((+p.amount||0)*(+p.crypto_rate||0),o.currency)}</div>`:''}
+      ${p.tx_id?`<div class="tx">${esc(p.tx_id)}</div>`:''}
+      ${p.reject_reason?`<div class="muted" style="font-size:12px">Rejected: ${esc(p.reject_reason)}</div>`:''}
+      ${p.has_receipt?`<button class="btn-ghost btn-sm" style="margin-top:8px" onclick="viewReceipt(${Number(p.id)})">📎 View receipt</button>`:''}
+    </div>`).join('') || '<div class="muted">No payment submitted yet.</div>';
+
+  // Payment actions depend on the current status.
+  let payActions;
+  if (o.payment_status === 'paid') {
+    payActions = `<div class="panel" style="color:var(--text-2)">✓ Payment verified and marked paid${o.paid_at?` · ${fmtDate(o.paid_at)}`:''}.</div>`;
+  } else if (o.payment_status === 'submitted' || o.payment_status === 'partial') {
+    payActions = `<div class="actions-row">
+        <button class="btn-sm" id="aVerify">✓ Mark paid</button>
+        <button class="btn-sm" id="aPartial" style="background:#fff0e0;color:#c2460a;border:1px solid #f5c49a">⅟₂ Mark partially paid</button>
+        <button class="btn-danger btn-sm" id="aReject">✕ Reject</button>
+      </div>
+      <input id="aReason" placeholder="Reject reason (optional)" style="margin-top:8px">`;
+  } else { // pending or rejected — allow a manual confirm
+    payActions = `<div class="actions-row"><button class="btn-sm" id="aVerify">✓ Mark paid</button></div>`;
+  }
+
+  const rmLocked   = !!o.rm_order_id;
+  const canCreateRM = o.payment_status === 'paid' && !o.rm_order_id
+    && ['pending','processing'].includes(o.delivery_status);
+
+  $('#dBody').innerHTML = `
+    <div class="sec"><div style="display:flex;gap:8px">${pill(o.payment_status)} ${pill(o.delivery_status)}</div></div>
+
+    <div class="sec"><div class="grid2">
+      <div class="panel"><h3 style="margin-top:0">Contact</h3>
+        <div class="nm" style="font-weight:600">${esc(o.customer_name||'—')}</div>
+        <div class="muted">${esc(o.customer_email||'')}</div>
+        <div class="muted">${esc(o.customer_phone||'')}</div></div>
+      <div class="panel"><h3 style="margin-top:0">Shipping</h3><div>${addr||'<span class="muted">—</span>'}</div></div>
+    </div></div>
+
+    <div class="sec"><h3>Items</h3><div class="panel">${items}</div></div>
+
+    ${o.order_notes?`<div class="sec"><h3>Order notes</h3><div class="panel" style="white-space:pre-wrap">${esc(o.order_notes)}</div></div>`:''}
+
+    <div class="sec"><div class="panel tot">
+      <div class="kv"><span class="k">Subtotal</span><span>${fmtMoney(o.subtotal_amount,o.currency)}</span></div>
+      <div class="kv"><span class="k">Shipping</span><span>${fmtMoney(o.shipping_amount,o.currency)}</span></div>
+      <div class="kv"><span class="k">VAT${Number(o.tax_rate)>0?` (${Math.round(parseFloat(o.tax_rate)*100)}%)`:''}</span><span>${fmtMoney(o.tax_amount,o.currency)}</span></div>
+      ${Number(o.discount_amount)>0?`<div class="kv disc"><span class="k">Discount${o.coupon_code?` (${esc(o.coupon_code)})`:''}</span><span>−${fmtMoney(o.discount_amount,o.currency)}</span></div>`:''}
+      <div class="kv grand"><span>Total</span><span>${fmtMoney(o.total_amount,o.currency)}</span></div>
+    </div></div>
+
+    <div class="sec"><h3>Payments</h3>${pays}${payActions}</div>
+
+    <div class="sec"><h3>Delivery</h3><div class="panel">
+      <div class="grid2">
+        <div><label>Status</label><select id="dStatus">${['pending','processing','shipped','delivered','cancelled'].map(s=>`<option ${s===o.delivery_status?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div><label>Carrier</label><select id="dCarrier">${['Royal Mail','DHL','FedEx','DPD','UPS','USPS'].map(s=>`<option ${s===o.shipping_carrier?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div><label>Tracking #</label><input id="dTrack" value="${esc(o.shipping_tracking_no||'')}" ${rmLocked?'disabled':''}></div>
+        <div><label>Note</label><input id="dNote" value="${esc(o.delivery_note||'')}"></div>
+      </div>
+      <div class="actions-row">
+        <button type="button" class="btn-sm" id="aDelivery">Save delivery</button>
+      </div>
+    </div></div>
+
+    ${(o.rm_order_id || ['pending','processing'].includes(o.delivery_status)) ? `
+    <div class="sec"><h3>Royal Mail</h3><div class="panel">
+      ${o.rm_order_id ? `
+        <div class="kv"><span class="k">RM Order ID</span><span class="cp-sub" style="font-family:monospace">${esc(String(o.rm_order_id))}</span></div>
+        ${o.shipping_tracking_no?`<div class="kv"><span class="k">Tracking</span><span>${esc(o.shipping_tracking_no)}</span></div>`:''}
+        <div style="margin-top:12px">
+          <button type="button" class="btn-sm btn-danger" id="aDeleteRm">Delete RM Shipment</button>
+        </div>
+      ` : canCreateRM ? `
+        <button type="button" class="btn-sm btn-rm" id="aCreateShipment">📦 Create Delivery</button>
+      ` : `
+        <span class="muted cp-sub">No Royal Mail shipment — create one once the order is paid and ready to dispatch.</span>
+      `}
+    </div></div>
+    ` : ''}
+
+    <div class="sec"><h3>Documents</h3><div class="panel">
+      <div id="docList"><span class="muted cp-sub">Loading…</span></div>
+      <div style="margin-top:10px;padding:8px 10px;background:var(--bg-2,#f8f9fa);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-2)">
+        <strong>Accepted:</strong> PDF, JPG, PNG, WebP &nbsp;·&nbsp; <strong>Max size:</strong> 5 MB
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="docName" placeholder="Document name (e.g. Shipping Label)" style="flex:1;min-width:150px">
+        <label class="btn-ghost btn-sm" for="docFile" style="cursor:pointer;white-space:nowrap">📎 Choose file</label>
+        <input type="file" id="docFile" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none">
+        <span id="docFileName" class="cp-sub muted">No file chosen</span>
+        <button type="button" class="btn-sm" id="docUploadBtn">↑ Upload</button>
+      </div>
+      <div class="err" id="docErr"></div>
+    </div></div>
+
+    <div class="err" id="dErr"></div>`;
+
+  const vBtn = $('#aVerify');
+  if (vBtn) vBtn.onclick = ()=> act(()=>api('admin_verify_payment',{method:'POST',json:{ref,decision:'verified'}}),'Payment marked paid');
+  const pBtn = $('#aPartial');
+  if (pBtn) pBtn.onclick = ()=> act(()=>api('admin_verify_payment',{method:'POST',json:{ref,decision:'partial'}}),'Marked as partially paid');
+  const rBtn = $('#aReject');
+  if (rBtn) rBtn.onclick = ()=> act(()=>api('admin_verify_payment',{method:'POST',json:{ref,decision:'rejected',reject_reason:$('#aReason').value}}),'Payment rejected');
+  $('#aDelivery').onclick = ()=> act(()=>api('admin_update_delivery',{method:'POST',json:{ref,delivery_status:$('#dStatus').value,shipping_carrier:$('#dCarrier').value,shipping_tracking_no:$('#dTrack').value,delivery_note:$('#dNote').value}}),'Delivery updated');
+  const rmBtn = $('#aCreateShipment');
+  if (rmBtn) rmBtn.onclick = () => openRmModal(o);
+
+  const rmDelBtn = $('#aDeleteRm');
+  if (rmDelBtn) rmDelBtn.onclick = async () => {
+    if (!confirm('Delete this Royal Mail shipment? The order will be cancelled in Click & Drop.')) return;
+    rmDelBtn.disabled = true;
+    try {
+      await api('admin_delete_rm_shipment', { method: 'POST', json: { ref } });
+      toast('Royal Mail shipment deleted', 'ok');
+      window.location.reload();
+    } catch(e) { $('#dErr').textContent = e.message; rmDelBtn.disabled = false; }
+  };
+
+  const docFileInput = $('#docFile');
+  if (docFileInput) docFileInput.onchange = () => {
+    const fn = $('#docFileName');
+    if (fn) fn.textContent = docFileInput.files[0]?.name || 'No file chosen';
+  };
+  const docUploadBtn = $('#docUploadBtn');
+  if (docUploadBtn) docUploadBtn.onclick = async () => {
+    const name = $('#docName').value.trim();
+    const file = docFileInput?.files?.[0];
+    const errEl = $('#docErr');
+    errEl.textContent = '';
+    if (!name) { errEl.textContent = 'Document name is required.'; return; }
+    if (!file) { errEl.textContent = 'Please choose a file.'; return; }
+    docUploadBtn.disabled = true; docUploadBtn.textContent = 'Uploading…';
+    try {
+      const fd = new FormData();
+      fd.append('ref', ref); fd.append('name', name); fd.append('file', file);
+      const r = await fetch(BASE + '?action=admin_add_document', { method: 'POST', headers: { 'X-Admin-Key': KEY }, body: fd });
+      if (!r.ok) { const d = await r.json().catch(()=>({})); throw new Error(d?.error || 'Upload failed'); }
+      $('#docName').value = ''; docFileInput.value = '';
+      const fn = $('#docFileName'); if (fn) fn.textContent = 'No file chosen';
+      toast('Document uploaded', 'ok');
+      loadDocuments(ref);
+    } catch(e) { errEl.textContent = e.message; }
+    finally { docUploadBtn.disabled = false; docUploadBtn.textContent = '↑ Upload'; }
+  };
+  loadDocuments(ref);
+
+  $('#overlay').classList.add('show'); $('#drawer').classList.add('show');
+}
+function closeDrawer(){ $('#overlay').classList.remove('show'); $('#drawer').classList.remove('show'); }
+$('#dClose').onclick = closeDrawer; $('#overlay').onclick = closeDrawer;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+
+async function act(fn, okMsg){
+  $('#dErr').textContent='';
+  try{ await fn(); closeDrawer(); toast(okMsg,'ok'); loadOrders(); }
+  catch(e){ $('#dErr').textContent=e.message; toast(e.message,'bad'); }
+}
+
+async function viewReceipt(pid){
+  try{
+    const res = await fetch(BASE+'?action=admin_get_receipt&payment_id='+pid,{headers:{'X-Admin-Key':KEY}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    window.open(URL.createObjectURL(await res.blob()),'_blank');
+  }catch(e){ toast('Could not load receipt: '+e.message,'bad'); }
+}
+
+async function loadDocuments(ref) {
+  const el = $('#docList');
+  if (!el) return;
+  try {
+    const r = await fetch(BASE + '?action=admin_list_documents&ref=' + encodeURIComponent(ref), { headers: { 'X-Admin-Key': KEY } }).then(x => x.json());
+    const docs = r.documents || [];
+    if (!docs.length) { el.innerHTML = '<span class="muted cp-sub">No documents uploaded yet.</span>'; return; }
+    el.innerHTML = docs.map(d => `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <span style="flex:1"><strong>${esc(d.document_name)}</strong><br>
+          <span class="muted cp-sub">${esc(d.file_name)}${d.file_size?' · '+fmtFileSize(d.file_size):''}</span></span>
+        <button type="button" class="btn-ghost btn-sm" onclick="viewDocument(${d.id})">View</button>
+        <button type="button" class="btn-xs btn-danger" onclick="deleteDoc(${d.id},'${esc(ref)}')">✕</button>
+      </div>`).join('');
+  } catch(e) { if (el) el.innerHTML = `<span class="err cp-sub">${esc(e.message)}</span>`; }
+}
+
+function fmtFileSize(b) {
+  if (!b) return '';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+async function viewDocument(id) {
+  try {
+    const r = await fetch(BASE + '?action=admin_get_document&id=' + id, { headers: { 'X-Admin-Key': KEY } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    window.open(URL.createObjectURL(await r.blob()), '_blank');
+  } catch(e) { toast('Could not load document: ' + e.message, 'bad'); }
+}
+
+async function deleteDoc(id, ref) {
+  if (!confirm('Delete this document? This cannot be undone.')) return;
+  try {
+    await api('admin_delete_document', { method: 'POST', json: { id } });
+    toast('Document deleted', 'ok');
+    loadDocuments(ref);
+  } catch(e) { toast(e.message, 'bad'); }
+}
+
+if (KEY) showApp();
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+$('#tabOrders').onclick   = () => switchTab('orders');
+$('#tabProducts').onclick  = () => switchTab('products');
+$('#tabShipping').onclick  = () => switchTab('shipping');
+$('#tabCoupons').onclick   = () => switchTab('coupons');
+$('#tabContact').onclick   = () => switchTab('contact');
+$('#tabNotify').onclick    = () => switchTab('notify');
+
+function switchTab(t) {
+  ['orders', 'products', 'shipping', 'coupons', 'contact', 'notify'].forEach(n => {
+    const cap = n[0].toUpperCase() + n.slice(1);
+    $('#tab' + cap).classList.toggle('active', n === t);
+    $('#' + n + 'View').classList.toggle('hide', n !== t);
+  });
+  if (t === 'products') loadProducts();
+  if (t === 'shipping') loadShipping();
+  if (t === 'coupons')  loadCoupons();
+  if (t === 'contact')  loadContact();
+  if (t === 'notify')   loadNotify();
+}
+
+// ── Products ─────────────────────────────────────────────────────────────────
+let PRODUCTS = [];
+
+$('#refreshProducts').onclick = loadProducts;
+
+async function loadProducts() {
+  $('#prodRows').innerHTML = '';
+  setProdState('<div class="spinner"></div>Loading products…');
+  try {
+    const data = await api('admin_list_products');
+    PRODUCTS = data.products || [];
+    renderProducts();
+  } catch(e) {
+    if (e.status === 401) { return $('#logout').click(); }
+    setProdState('⚠️ ' + esc(e.message));
+  }
+}
+
+function setProdState(html) {
+  const s = $('#prodState');
+  if (html) { s.innerHTML = html; s.classList.remove('hide'); }
+  else s.classList.add('hide');
+}
+
+function renderProducts() {
+  if (!PRODUCTS.length) { setProdState('No products found.'); return; }
+  setProdState('');
+  const rows = [];
+  for (const p of PRODUCTS) {
+    const variants = p.variants || [];
+    const prodStatus = `<div class="prod-status" style="margin-top:4px">
+      <span class="pill ${p.is_active ? 's-paid' : 's-cancelled'}" style="font-size:10px">${p.is_active ? 'listed' : 'hidden'}</span>
+      <button type="button" class="btn-ghost btn-sm" style="margin-left:6px" onclick="toggleProductActive(${p.id},${p.is_active ? 0 : 1})">${p.is_active ? 'Unlist' : 'List on site'}</button>
+    </div>`;
+    if (!variants.length) {
+      rows.push(`<tr>
+        <td><div class="prod-name">${esc(p.name)}</div><div class="prod-cat">${esc(p.category)}</div>${prodStatus}</td>
+        <td colspan="6" class="muted">No variants</td>
+        <td><button type="button" class="btn-soft btn-sm" onclick="openAddVariantModal(${p.id},'${esc(p.name).replace(/'/g, "\\'")}')">Add Variant</button></td>
+      </tr>`);
+      continue;
+    }
+    variants.forEach((v, vi) => {
+      const effectivePrice = v.sale_price != null ? +v.sale_price : +v.price;
+      const priceHtml = v.sale_price != null
+        ? `<strong>${fmtMoney(v.sale_price,'GBP')}</strong> <span class="muted" style="text-decoration:line-through">${fmtMoney(v.price,'GBP')}</span>`
+        : fmtMoney(v.price, 'GBP');
+      const saleTxt = v.sale_price != null ? fmtMoney(v.sale_price,'GBP') : '<span class="muted">—</span>';
+      const stockTxt = v.stock_quantity != null ? v.stock_quantity : '<span class="muted">∞</span>';
+      const statusPill = v.is_active ? '<span class="pill s-paid">active</span>' : '<span class="pill s-cancelled">inactive</span>';
+      const variantLabel = [v.dosage, v.purchase_type, v.label].filter(Boolean).join(' · ') || '—';
+      rows.push(`<tr class="${v.is_active ? '' : 'inactive-row'}" data-vid="${v.id}">
+        ${vi === 0 ? `<td rowspan="${variants.length}"><div class="prod-name">${esc(p.name)}</div><div class="prod-cat">${esc(p.category)}</div>${prodStatus}</td>` : ''}
+        <td class="ref">${esc(v.sku)}</td>
+        <td>${esc(variantLabel)}</td>
+        <td>${priceHtml}</td>
+        <td>${saleTxt}</td>
+        <td>${stockTxt}</td>
+        <td>${statusPill}</td>
+        <td>
+          <div class="actions-row actions-nowrap">
+            <button type="button" class="btn-soft btn-sm" onclick="openVariantModal(${v.id})">Edit</button>
+            <button type="button" class="btn-ghost btn-sm" onclick="toggleVariantActive(${v.id},${v.is_active ? 0 : 1})">${v.is_active ? 'Disable' : 'Enable'}</button>
+          </div>
+        </td>
+      </tr>`);
+    });
+  }
+  $('#prodRows').innerHTML = rows.join('');
+}
+
+// ── Variant edit modal ────────────────────────────────────────────────────────
+let currentVariantId = null;
+let currentNewVariantProductId = null;
+
+function openVariantModal(vid) {
+  const variant = PRODUCTS.flatMap(p => p.variants || []).find(v => v.id === vid);
+  if (!variant) return;
+  currentVariantId = vid;
+  currentNewVariantProductId = null;
+  const label = [variant.dosage, variant.purchase_type, variant.label].filter(Boolean).join(' · ') || variant.sku;
+  $('#vmTitle').textContent = 'Edit — ' + label;
+  $('#vmSku').value = variant.sku || '';
+  $('#vmDosage').value = variant.dosage || '';
+  $('#vmPurchaseType').value = variant.purchase_type || '';
+  $('#vmLabel').value = variant.label || '';
+  $('#vmPrice').value = variant.price;
+  $('#vmSale').value = variant.sale_price != null ? variant.sale_price : '';
+  $('#vmStock').value = variant.stock_quantity != null ? variant.stock_quantity : '';
+  $('#vmActive').checked = !!+variant.is_active;
+  $('#vmErr').textContent = '';
+  $('#vmBg').classList.add('show');
+  $('#vmModal').classList.add('show');
+}
+
+function openAddVariantModal(productId, productName) {
+  currentVariantId = null;
+  currentNewVariantProductId = productId;
+  $('#vmTitle').textContent = 'Add Variant — ' + productName;
+  $('#vmSku').value = '';
+  $('#vmDosage').value = '';
+  $('#vmPurchaseType').value = '';
+  $('#vmLabel').value = '';
+  $('#vmPrice').value = '';
+  $('#vmSale').value = '';
+  $('#vmStock').value = '';
+  $('#vmActive').checked = true;
+  $('#vmErr').textContent = '';
+  $('#vmBg').classList.add('show');
+  $('#vmModal').classList.add('show');
+}
+
+function closeVariantModal() {
+  $('#vmBg').classList.remove('show');
+  $('#vmModal').classList.remove('show');
+  currentVariantId = null;
+  currentNewVariantProductId = null;
+}
+
+$('#vmClose').onclick = closeVariantModal;
+$('#vmCancel').onclick = closeVariantModal;
+$('#vmBg').onclick = closeVariantModal;
+
+$('#vmSave').onclick = async () => {
+  if (!currentVariantId && !currentNewVariantProductId) return;
+  $('#vmErr').textContent = '';
+  const sku = $('#vmSku').value.trim();
+  if (!sku) { $('#vmErr').textContent = 'SKU is required.'; return; }
+  $('#vmSave').disabled = true;
+  const price = parseFloat($('#vmPrice').value);
+  const saleRaw = $('#vmSale').value.trim();
+  const stockRaw = $('#vmStock').value.trim();
+  const body = {
+    id: currentVariantId,
+    product_id: currentVariantId
+      ? PRODUCTS.flatMap(p => p.variants || []).find(v => v.id === currentVariantId)?.product_id
+      : currentNewVariantProductId,
+    sku,
+    dosage: $('#vmDosage').value.trim() || null,
+    purchase_type: $('#vmPurchaseType').value.trim() || null,
+    label: $('#vmLabel').value.trim() || null,
+    price,
+    sale_price: saleRaw !== '' ? parseFloat(saleRaw) : null,
+    stock_quantity: stockRaw !== '' ? parseInt(stockRaw, 10) : null,
+    is_active: $('#vmActive').checked ? 1 : 0,
+  };
+  try {
+    await api('admin_save_variant', { method: 'POST', json: body });
+    toast('Variant saved', 'ok');
+    closeVariantModal();
+    await loadProducts();
+  } catch(e) {
+    $('#vmErr').textContent = e.message;
+  } finally {
+    $('#vmSave').disabled = false;
+  }
+};
+
+async function toggleProductActive(id, newActive) {
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  try {
+    await api('admin_save_product', { method: 'POST', json: {
+      id,
+      slug: p.slug,
+      name: p.name,
+      category: p.category,
+      image_url: p.image_url,
+      currency: p.currency,
+      is_active: newActive,
+    }});
+    toast(newActive ? 'Product listed on site' : 'Product hidden from site', 'ok');
+    await loadProducts();
+  } catch(e) {
+    toast(e.message, 'bad');
+  }
+}
+
+async function toggleVariantActive(vid, newActive) {
+  const variant = PRODUCTS.flatMap(p => p.variants || []).find(v => v.id === vid);
+  if (!variant) return;
+  try {
+    await api('admin_save_variant', { method: 'POST', json: {
+      id: vid,
+      product_id: variant.product_id,
+      sku: variant.sku,
+      dosage: variant.dosage,
+      purchase_type: variant.purchase_type,
+      label: variant.label,
+      price: variant.price,
+      sale_price: variant.sale_price,
+      stock_quantity: variant.stock_quantity,
+      is_active: newActive,
+    }});
+    toast(newActive ? 'Variant enabled' : 'Variant disabled', 'ok');
+    await loadProducts();
+  } catch(e) {
+    toast(e.message, 'bad');
+  }
+}
+
+// ── Shipping rates ────────────────────────────────────────────────────────────
+let SHIPPING = [];
+let currentShipId = null;
+
+$('#refreshShipping').onclick = loadShipping;
+$('#addShippingBtn').onclick  = () => openShippingModal(null);
+$('#smClose').onclick  = closeShippingModal;
+$('#smCancel').onclick = closeShippingModal;
+$('#smBg').onclick     = closeShippingModal;
+
+async function loadShipping() {
+  $('#shipRows').innerHTML = '';
+  setShipState('<div class="spinner"></div>Loading shipping rates…');
+  try {
+    const data = await api('admin_list_shipping');
+    SHIPPING = data.rates || [];
+    renderShipping();
+  } catch(e) {
+    if (e.status === 401) return $('#logout').click();
+    setShipState('⚠️ ' + esc(e.message));
+  }
+}
+
+function setShipState(html) {
+  const s = $('#shipState');
+  if (html) { s.innerHTML = html; s.classList.remove('hide'); }
+  else s.classList.add('hide');
+}
+
+function renderShipping() {
+  if (!SHIPPING.length) { setShipState('No shipping rates found.'); return; }
+  setShipState('');
+  $('#shipRows').innerHTML = SHIPPING.map(r => {
+    const isDefault = r.country === 'default';
+    const countryLabel = isDefault
+      ? '<strong>Default</strong> <span class="muted">(all other countries)</span>'
+      : esc(r.country);
+    const thresh = r.free_threshold != null
+      ? fmtMoney(r.free_threshold, 'GBP')
+      : '<span class="muted">—</span>';
+    const statusPill = r.is_active
+      ? '<span class="pill s-paid">active</span>'
+      : '<span class="pill s-cancelled">inactive</span>';
+    return `<tr>
+      <td>${countryLabel}</td>
+      <td>${esc(r.method_name || 'Standard shipping')}</td>
+      <td class="amt">${fmtMoney(r.rate, 'GBP')}</td>
+      <td>${thresh}</td>
+      <td>${statusPill}</td>
+      <td><div class="actions-row actions-nowrap">
+        <button type="button" class="btn-soft btn-sm" onclick="openShippingModal(${r.id})">Edit</button>
+        ${isDefault ? '' : `<button type="button" class="btn-danger btn-sm" onclick="deleteShippingRate(${r.id})">Delete</button>`}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function openShippingModal(id) {
+  currentShipId = id;
+  if (id) {
+    const r = SHIPPING.find(x => x.id === id);
+    if (!r) return;
+    $('#smTitle').textContent  = r.country === 'default' ? 'Edit Default Rate' : 'Edit — ' + r.country;
+    $('#smCountry').value      = r.country;
+    $('#smCountry').disabled   = r.country === 'default';
+    $('#smMethodName').value   = r.method_name || 'Standard shipping';
+    $('#smMethodCode').value   = r.method_code || 'standard';
+    $('#smRate').value         = r.rate;
+    $('#smThresh').value       = r.free_threshold != null ? r.free_threshold : '';
+    $('#smActive').checked     = !!+r.is_active;
+  } else {
+    $('#smTitle').textContent  = 'Add Shipping Rate';
+    $('#smCountry').value      = '';
+    $('#smCountry').disabled   = false;
+    $('#smMethodName').value   = '';
+    $('#smMethodCode').value   = '';
+    $('#smRate').value         = '';
+    $('#smThresh').value       = '';
+    $('#smActive').checked     = true;
+  }
+  $('#smErr').textContent = '';
+  $('#smBg').classList.add('show');
+  $('#smModal').classList.add('show');
+}
+
+function closeShippingModal() {
+  $('#smBg').classList.remove('show');
+  $('#smModal').classList.remove('show');
+  currentShipId = null;
+}
+
+$('#smSave').onclick = async () => {
+  $('#smErr').textContent = '';
+  $('#smSave').disabled = true;
+  const country = $('#smCountry').value.trim();
+  const methodName = $('#smMethodName').value.trim();
+  const methodCode = $('#smMethodCode').value.trim();
+  const rateRaw  = $('#smRate').value.trim();
+  const threshRaw = $('#smThresh').value.trim();
+  if (!country)     { $('#smErr').textContent = 'Country is required.';       $('#smSave').disabled = false; return; }
+  if (!methodName)  { $('#smErr').textContent = 'Method name is required.';   $('#smSave').disabled = false; return; }
+  if (!methodCode)  { $('#smErr').textContent = 'Method code is required.';   $('#smSave').disabled = false; return; }
+  if (!rateRaw)     { $('#smErr').textContent = 'Rate is required.';          $('#smSave').disabled = false; return; }
+  const body = {
+    id: currentShipId,
+    country,
+    method_name: methodName,
+    method_code: methodCode,
+    rate: parseFloat(rateRaw),
+    free_threshold: threshRaw !== '' ? parseFloat(threshRaw) : null,
+    is_active: $('#smActive').checked ? 1 : 0,
+  };
+  try {
+    await api('admin_save_shipping', { method: 'POST', json: body });
+    toast('Shipping rate saved', 'ok');
+    closeShippingModal();
+    await loadShipping();
+  } catch(e) {
+    $('#smErr').textContent = e.message;
+  } finally {
+    $('#smSave').disabled = false;
+  }
+};
+
+async function deleteShippingRate(id) {
+  const r = SHIPPING.find(x => x.id === id);
+  if (!r || !confirm(`Delete shipping method "${r.method_name || 'Standard shipping'}" for "${r.country}"?`)) return;
+  try {
+    await api('admin_delete_shipping', { method: 'POST', json: { id } });
+    toast('Shipping rate deleted', 'ok');
+    await loadShipping();
+  } catch(e) {
+    toast(e.message, 'bad');
+  }
+}
+
+// ── Royal Mail Create Delivery ────────────────────────────────────────────────
+let rmOrderRef = null;
+
+function openRmModal(order) {
+  rmOrderRef = order.order_ref;
+  const a = order.shipping_address || {};
+
+  const fullName = [
+    a.first_name || order.ship_first_name || '',
+    a.last_name  || order.ship_last_name  || '',
+  ].filter(Boolean).join(' ') || order.customer_name || '';
+
+  $('#rmName').value     = fullName;
+  $('#rmLine1').value    = a.address1 || '';
+  $('#rmLine2').value    = a.address2 || '';
+  $('#rmCity').value     = a.city     || '';
+  $('#rmPostcode').value = a.postcode || '';
+  $('#rmCountry').value  = a.country  || '';
+
+  // Reset to defaults
+  $('#rmService').value  = '';
+  $('#rmFormat').value   = 'smallParcel';
+  $('#rmWeight').value   = '500';
+
+  $('#rmErr').textContent = '';
+  $('#rmResult').innerHTML = '';
+  $('#rmResult').classList.add('hide');
+  $('#rmActions').classList.remove('hide');
+  $('#rmSubmit').disabled = false;
+  $('#rmSubmit').textContent = 'Create Delivery';
+
+  $('#rmBg').classList.add('show');
+  $('#rmModal').classList.add('show');
+}
+
+
+function closeRmModal() {
+  $('#rmBg').classList.remove('show');
+  $('#rmModal').classList.remove('show');
+  rmOrderRef = null;
+}
+
+$('#rmClose').onclick  = closeRmModal;
+$('#rmCancel').onclick = closeRmModal;
+$('#rmBg').onclick     = closeRmModal;
+
+$('#rmSubmit').onclick = async () => {
+  if (!rmOrderRef) return;
+  $('#rmErr').textContent = '';
+  $('#rmSubmit').disabled = true;
+  $('#rmSubmit').textContent = 'Creating…';
+
+  const line1 = $('#rmLine1').value.trim();
+  const city  = $('#rmCity').value.trim();
+  if (!line1) { $('#rmErr').textContent = 'Address line 1 is required.'; $('#rmSubmit').disabled = false; $('#rmSubmit').textContent = 'Create Delivery'; return; }
+  if (!city)  { $('#rmErr').textContent = 'City is required.';           $('#rmSubmit').disabled = false; $('#rmSubmit').textContent = 'Create Delivery'; return; }
+
+  const weight = parseInt($('#rmWeight').value, 10);
+  if (!weight || weight < 1) { $('#rmErr').textContent = 'Weight must be at least 1 gram.'; $('#rmSubmit').disabled = false; $('#rmSubmit').textContent = 'Create Delivery'; return; }
+
+  const body = {
+    ref:            rmOrderRef,
+    weight_grams:   weight,
+    package_format: $('#rmFormat').value,
+    service_code:   $('#rmService').value,
+    address_override: {
+      first_name:   $('#rmName').value.trim().split(' ')[0] || '',
+      last_name:    $('#rmName').value.trim().split(' ').slice(1).join(' ') || '',
+      address1:     line1,
+      address2:     $('#rmLine2').value.trim() || null,
+      city,
+      postcode:     $('#rmPostcode').value.trim(),
+      country:      $('#rmCountry').value.trim(),
+    },
+  };
+
+  try {
+    const res = await api('admin_create_shipment', { method: 'POST', json: body });
+
+    toast('Royal Mail shipment created' + (res.tracking_number ? ` · ${res.tracking_number}` : ''), 'ok');
+    closeRmModal();
+    window.location.reload();
+  } catch(e) {
+    $('#rmErr').textContent = e.message;
+    $('#rmSubmit').disabled = false;
+    $('#rmSubmit').textContent = 'Create Delivery';
+  }
+};
+
+// ── Coupons ───────────────────────────────────────────────────────────────────
+let COUPONS = [];
+let currentCouponId = null;
+
+$('#refreshCoupons').onclick = loadCoupons;
+$('#addCouponBtn').onclick   = () => openCouponModal(null);
+$('#cpClose').onclick  = closeCouponModal;
+$('#cpCancel').onclick = closeCouponModal;
+$('#cpBg').onclick     = closeCouponModal;
+
+async function loadCoupons() {
+  $('#couponRows').innerHTML = '';
+  setCouponState('<div class="spinner"></div>Loading coupons…');
+  try {
+    const data = await api('admin_list_coupons');
+    COUPONS = data.coupons || [];
+    renderCoupons();
+  } catch(e) {
+    if (e.status === 401) return $('#logout').click();
+    setCouponState('⚠️ ' + esc(e.message));
+  }
+}
+
+function setCouponState(html) {
+  const s = $('#couponState');
+  if (html) { s.innerHTML = html; s.classList.remove('hide'); }
+  else s.classList.add('hide');
+}
+
+function renderCoupons() {
+  if (!COUPONS.length) { setCouponState('No coupons found. Click + Add Coupon to create one.'); return; }
+  setCouponState('');
+  $('#couponRows').innerHTML = COUPONS.map(c => {
+    const typeLabel = c.discount_type === 'percent'
+      ? `${parseFloat(c.discount_value)}%`
+      : `£${parseFloat(c.discount_value).toFixed(2)}`;
+    const minOrder = c.min_order_amount != null ? `£${parseFloat(c.min_order_amount).toFixed(2)}` : '—';
+    const globalLimit = c.max_uses != null ? `${c.used_count}/${c.max_uses}` : `${c.used_count}/∞`;
+    const perCust = c.per_customer_limit != null ? ` · ${c.per_customer_limit}/customer` : '';
+    const uses = globalLimit + perCust;
+    const expires = c.active_until ? new Date(c.active_until).toLocaleDateString('en-GB') : '—';
+    const statusPill = c.is_active
+      ? '<span class="pill s-paid">active</span>'
+      : '<span class="pill s-cancelled">inactive</span>';
+    return `<tr>
+      <td><strong>${esc(c.code)}</strong>${c.description ? `<br><span class="muted cp-sub">${esc(c.description)}</span>` : ''}</td>
+      <td>${esc(c.discount_type)}</td>
+      <td>${esc(typeLabel)}</td>
+      <td>${esc(minOrder)}</td>
+      <td>${esc(uses)}</td>
+      <td>${esc(expires)}</td>
+      <td>${statusPill}</td>
+      <td>
+        <button type="button" class="btn-xs" onclick="openCouponModal(${c.id})">Edit</button>
+        <button type="button" class="btn-xs btn-danger" onclick="deleteCoupon(${c.id})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openCouponModal(id) {
+  currentCouponId = id;
+  const c = id ? COUPONS.find(x => x.id === id) : null;
+  $('#cpTitle').textContent    = c ? 'Edit Coupon' : 'Add Coupon';
+  $('#cpCode').value           = c ? c.code : '';
+  $('#cpDesc').value           = c ? (c.description || '') : '';
+  $('#cpType').value           = c ? c.discount_type : 'percent';
+  $('#cpValue').value          = c ? c.discount_value : '';
+  $('#cpMin').value            = c && c.min_order_amount != null ? c.min_order_amount : '';
+  $('#cpMax').value            = c && c.max_uses != null ? c.max_uses : '';
+  $('#cpPerCustomer').value    = c && c.per_customer_limit != null ? c.per_customer_limit : '';
+  $('#cpFrom').value           = c && c.active_from  ? c.active_from.replace(' ','T').slice(0,16)  : '';
+  $('#cpUntil').value          = c && c.active_until ? c.active_until.replace(' ','T').slice(0,16) : '';
+  $('#cpActive').checked       = c ? !!parseInt(c.is_active) : true;
+  $('#cpErr').textContent      = '';
+  $('#cpSave').disabled        = false;
+  $('#cpBg').classList.add('show');
+  $('#cpModal').classList.add('show');
+}
+
+function closeCouponModal() {
+  $('#cpBg').classList.remove('show');
+  $('#cpModal').classList.remove('show');
+}
+
+$('#cpSave').onclick = async () => {
+  $('#cpErr').textContent = '';
+  $('#cpSave').disabled = true;
+  try {
+    const body = {
+      code:            $('#cpCode').value.trim().toUpperCase(),
+      description:     $('#cpDesc').value.trim() || null,
+      discount_type:   $('#cpType').value,
+      discount_value:  parseFloat($('#cpValue').value),
+      min_order_amount:$('#cpMin').value !== '' ? parseFloat($('#cpMin').value) : null,
+      max_uses:           $('#cpMax').value !== '' ? parseInt($('#cpMax').value, 10) : null,
+      per_customer_limit: $('#cpPerCustomer').value !== '' ? parseInt($('#cpPerCustomer').value, 10) : null,
+      active_from:     $('#cpFrom').value  || null,
+      active_until:    $('#cpUntil').value || null,
+      is_active:       $('#cpActive').checked ? 1 : 0,
+    };
+    if (currentCouponId) body.id = currentCouponId;
+    await api('admin_save_coupon', { method: 'POST', json: body });
+    toast(currentCouponId ? 'Coupon updated' : 'Coupon created', 'ok');
+    closeCouponModal();
+    await loadCoupons();
+  } catch(e) {
+    $('#cpErr').textContent = e.message;
+    $('#cpSave').disabled = false;
+  }
+};
+
+async function deleteCoupon(id) {
+  if (!confirm('Delete this coupon? This cannot be undone.')) return;
+  try {
+    await api('admin_delete_coupon', { method: 'POST', json: { id } });
+    toast('Coupon deleted', 'ok');
+    await loadCoupons();
+  } catch(e) {
+    toast(e.message, 'bad');
+  }
+}
+
+// ── Contact submissions ─────────────────────────────────────────────────────────
+let CONTACT_SUBMISSIONS = [];
+
+$('#refreshContact').onclick = loadContact;
+
+async function loadContact() {
+  $('#contactRows').innerHTML = '';
+  setContactState('<div class="spinner"></div>Loading submissions…');
+  try {
+    const data = await api('admin_list_contact_submissions');
+    CONTACT_SUBMISSIONS = data.submissions || [];
+    renderContact();
+  } catch(e) {
+    if (e.status === 401) return $('#logout').click();
+    setContactState('⚠️ ' + esc(e.message));
+  }
+}
+
+function setContactState(html) {
+  const s = $('#contactState');
+  if (html) { s.innerHTML = html; s.classList.remove('hide'); }
+  else s.classList.add('hide');
+}
+
+function renderContact() {
+  if (!CONTACT_SUBMISSIONS.length) { setContactState('No contact submissions yet.'); return; }
+  setContactState('');
+  $('#contactRows').innerHTML = CONTACT_SUBMISSIONS.map(c => `<tr>
+    <td>${esc([c.first_name, c.last_name].filter(Boolean).join(' '))}</td>
+    <td class="ref">${esc(c.email)}</td>
+    <td>${esc(c.phone) || '<span class="muted">—</span>'}</td>
+    <td>${esc(c.company) || '<span class="muted">—</span>'}</td>
+    <td>${esc(c.country) || '<span class="muted">—</span>'}</td>
+    <td>${c.product_interest ? esc(c.product_interest) : '<span class="muted">—</span>'}</td>
+    <td style="max-width:280px;white-space:normal">${c.message ? esc(c.message) : '<span class="muted">—</span>'}</td>
+    <td class="when">${fmtDate(c.created_at)}</td>
+  </tr>`).join('');
+}
+
+// ── "Notify me" requests ─────────────────────────────────────────────────────────
+let NOTIFY_REQUESTS = [];
+
+$('#refreshNotify').onclick = loadNotify;
+
+async function loadNotify() {
+  $('#notifyRows').innerHTML = '';
+  setNotifyState('<div class="spinner"></div>Loading requests…');
+  try {
+    const data = await api('admin_list_notify_requests');
+    NOTIFY_REQUESTS = data.requests || [];
+    renderNotify();
+  } catch(e) {
+    if (e.status === 401) return $('#logout').click();
+    setNotifyState('⚠️ ' + esc(e.message));
+  }
+}
+
+function setNotifyState(html) {
+  const s = $('#notifyState');
+  if (html) { s.innerHTML = html; s.classList.remove('hide'); }
+  else s.classList.add('hide');
+}
+
+function renderNotify() {
+  if (!NOTIFY_REQUESTS.length) { setNotifyState('No "notify me" requests yet.'); return; }
+  setNotifyState('');
+  $('#notifyRows').innerHTML = NOTIFY_REQUESTS.map(n => `<tr class="${n.is_active ? '' : 'inactive-row'}">
+    <td><div class="prod-name">${esc(n.product_name || ('#' + n.product_id))}</div></td>
+    <td class="ref">${esc(n.email)}</td>
+    <td>${n.is_active ? '<span class="pill s-paid">waiting</span>' : '<span class="pill s-cancelled">cancelled</span>'}</td>
+    <td class="when">${fmtDate(n.created_at)}</td>
+  </tr>`).join('');
+}
+</script>
+</body>
+</html>

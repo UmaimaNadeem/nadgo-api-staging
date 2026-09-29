@@ -1,0 +1,14 @@
+# Real secrets — never commit
+config.php
+
+# Composer (the bundled lib/PHPMailer works without it)
+/vendor/
+
+# Uploaded receipts — keep the folder, ignore its contents
+/uploads/receipts/*
+!/uploads/receipts/.gitkeep
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log

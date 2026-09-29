@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Nadgo · Logs</title>
+<script>document.documentElement.setAttribute('data-theme', localStorage.getItem('nadgo_theme') || 'dark');</script>
+<style>
+  :root,:root[data-theme="light"]{--bg:#f5f6fb;--surface:#fff;--surface-2:#f1f3f9;--border:#e7eaf2;--text:#131a2b;--mut:#616b85;--acc:#0F2057;--ring:rgba(15,32,87,.14);}
+  :root[data-theme="dark"]{--bg:#0a0d16;--surface:#121726;--surface-2:#1a2132;--border:#262e42;--text:#e8ebf4;--mut:#9aa4bd;--acc:#5b8cff;--ring:rgba(91,140,255,.25);}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--text);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  button{font:inherit;cursor:pointer;border:0;border-radius:9px;padding:8px 13px;background:var(--acc);color:#fff;font-weight:600}
+  button:active{transform:translateY(1px)}
+  .ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+  .ghost.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  input,select{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:8px 10px;font:inherit;outline:none}
+  input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--ring)}
+  label{font-size:12px;font-weight:600;color:var(--mut);margin:0 0 5px;display:block}
+  .hide{display:none!important}
+  .topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 18px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+  .brand{font-weight:800;display:flex;align-items:center;gap:8px}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--acc)}
+  .tag{font-size:11px;color:var(--mut);border:1px solid var(--border);border-radius:6px;padding:2px 7px}
+  .spacer{flex:1}
+  .wrap{padding:16px;max-width:1300px;margin:0 auto}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .tabs{display:flex;gap:6px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .tbl-wrap{overflow:auto;max-height:calc(100vh - 190px)}
+  table{width:100%;border-collapse:collapse;min-width:900px}
+  th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);padding:9px 12px;border-bottom:1px solid var(--border)}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;font-size:12.5px}
+  tr:hover td{background:var(--surface-2)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .when{color:var(--mut);white-space:nowrap}
+  .st{font-weight:700;border-radius:6px;padding:1px 7px;font-size:11px;display:inline-block}
+  .st.s2{color:#0a7a3d;background:#d8f5e3} .st.s3{color:#0e7490;background:#d6f3f8}
+  .st.s4{color:#9a6b00;background:#fff3d6} .st.s5{color:#b42318;background:#ffe2de} .st.s0{color:#616b85;background:#eceef4}
+  :root[data-theme="dark"] .st.s2{color:#79e6a4;background:#103a24} :root[data-theme="dark"] .st.s3{color:#7fdcea;background:#0c333b}
+  :root[data-theme="dark"] .st.s4{color:#ffd87a;background:#3a2f10} :root[data-theme="dark"] .st.s5{color:#ff9a90;background:#3a1714} :root[data-theme="dark"] .st.s0{color:#9aa4bd;background:#1a2132}
+  .err{color:#dc2b3d;max-width:420px;white-space:pre-wrap;word-break:break-word}
+  .state{padding:40px;text-align:center;color:var(--mut)}
+  .spin{width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:s .7s linear infinite;margin:0 auto 10px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  pre.log{margin:0;padding:14px 16px;overflow:auto;max-height:calc(100vh - 200px);font-family:ui-monospace,Menlo,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word}
+  .logfile{font-size:12px;color:var(--mut);padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+  /* login */
+  .login{min-height:100vh;display:grid;place-items:center;padding:20px}
+  .login .card{padding:28px;max-width:380px;width:100%}
+  .login h1{margin:0 0 4px;font-size:18px}
+  .login p{margin:0 0 16px;color:var(--mut)}
+  .login .f{margin-bottom:12px}
+  .err-line{color:#dc2b3d;min-height:16px;font-size:12px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <div class="card">
+    <h1>Developer Logs</h1>
+    <p>Admin token required.</p>
+    <div class="f"><label>API base URL</label><input id="apiBase" placeholder="https://api.nad-go.com/"></div>
+    <div class="f"><label>Admin token</label><input id="apiKey" type="password" autocomplete="off"></div>
+    <div class="err-line" id="loginErr"></div>
+    <button id="loginBtn" style="width:100%">Open logs</button>
+  </div>
+</div>
+
+<div id="app" class="hide">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Nadgo Logs</div>
+    <span class="tag" id="who"></span>
+    <div class="spacer"></div>
+    <button class="ghost" id="theme">🌓</button>
+    <button class="ghost" id="logout">Log out</button>
+  </div>
+  <div class="wrap">
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="ghost on" id="tabReq">Requests</button>
+        <button class="ghost" id="tabPhp">PHP error log</button>
+      </div>
+      <div class="spacer"></div>
+
+      <!-- request filters -->
+      <span id="reqFilters" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="fAction" placeholder="action" style="width:130px">
+        <input id="fStatus" placeholder="status" style="width:80px" inputmode="numeric">
+        <button class="ghost" id="fErrors" title="Errors only">⚠ Errors</button>
+        <select id="fLimit"><option>200</option><option>500</option><option>1000</option></select>
+      </span>
+      <select id="phpLines" class="hide"><option>200</option><option>500</option><option>1000</option></select>
+
+      <button class="ghost on" id="auto">⟳ Auto</button>
+      <button id="refresh">Refresh</button>
+    </div>
+
+    <div class="card">
+      <!-- requests view -->
+      <div id="reqView">
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Time (UTC)</th><th>IP</th><th>Method</th><th>Action</th><th>Status</th><th>ms</th><th>Actor</th><th>Error</th></tr></thead>
+          <tbody id="rows"></tbody></table>
+        </div>
+        <div id="reqState" class="state hide"></div>
+      </div>
+      <!-- php log view -->
+      <div id="phpView" class="hide">
+        <div id="phpBody"></div>
+        <div id="phpState" class="state hide"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=s=>{ if(!s) return '—'; return esc(String(s).replace('T',' ').replace(/\..*$/,'').slice(0,19)); };
+const stClass=c=>{c=+c||0; return c>=500?'s5':c>=400?'s4':c>=300?'s3':c>=200?'s2':'s0';};
+
+let BASE=localStorage.getItem('nadgo_base')||(location.origin+'/');
+let KEY=localStorage.getItem('nadgo_key')||'';
+let TAB='req', ERR=false, timer=null;
+
+function theme(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('nadgo_theme',t);}
+$('#theme').onclick=()=>theme((document.documentElement.getAttribute('data-theme')||'dark')==='dark'?'light':'dark');
+
+async function api(qs){
+  const res=await fetch(BASE+'?action='+qs,{headers:{'X-Admin-Key':KEY}});
+  let d=null; try{d=await res.json()}catch{}
+  if(!res.ok){const e=new Error((d&&d.error)||('HTTP '+res.status));e.status=res.status;throw e;}
+  return d;
+}
+
+$('#apiBase').value=BASE; $('#apiKey').value=KEY;
+$('#loginBtn').onclick=async()=>{
+  BASE=$('#apiBase').value.trim()||(location.origin+'/'); KEY=$('#apiKey').value.trim();
+  $('#loginErr').textContent='';
+  try{ await api('admin_logs&limit=1'); localStorage.setItem('nadgo_base',BASE); localStorage.setItem('nadgo_key',KEY); showApp(); }
+  catch(e){ $('#loginErr').textContent=(e.status===401)?'Invalid admin token.':e.message; }
+};
+$('#logout').onclick=()=>{localStorage.removeItem('nadgo_key');KEY='';location.reload();};
+
+function showApp(){ $('#login').classList.add('hide'); $('#app').classList.remove('hide'); $('#who').textContent=BASE; load(); startAuto(); }
+
+$('#tabReq').onclick=()=>setTab('req');
+$('#tabPhp').onclick=()=>setTab('php');
+function setTab(t){
+  TAB=t;
+  $('#tabReq').classList.toggle('on',t==='req'); $('#tabPhp').classList.toggle('on',t==='php');
+  $('#reqView').classList.toggle('hide',t!=='req'); $('#phpView').classList.toggle('hide',t!=='php');
+  $('#reqFilters').classList.toggle('hide',t!=='req'); $('#phpLines').classList.toggle('hide',t!=='php');
+  load();
+}
+$('#refresh').onclick=load;
+$('#fErrors').onclick=()=>{ERR=!ERR; $('#fErrors').classList.toggle('on',ERR); load();};
+['#fAction','#fStatus','#fLimit','#phpLines'].forEach(s=>$(s).addEventListener('change',load));
+let t2; $('#fAction').addEventListener('input',()=>{clearTimeout(t2);t2=setTimeout(load,300);});
+
+$('#auto').onclick=()=>{ if(timer){stopAuto();} else {startAuto();} };
+function startAuto(){ $('#auto').classList.add('on'); clearInterval(timer); timer=setInterval(load,5000); }
+function stopAuto(){ $('#auto').classList.remove('on'); clearInterval(timer); timer=null; }
+
+function setState(el,html){ const s=$(el); if(html){s.innerHTML=html;s.classList.remove('hide');}else s.classList.add('hide'); }
+
+async function load(){
+  if($('#app').classList.contains('hide')) return;
+  try{ TAB==='req' ? await loadReq() : await loadPhp(); }
+  catch(e){ if(e.status===401) return $('#logout').click(); }
+}
+
+async function loadReq(){
+  if(!$('#rows').children.length) setState('#reqState','<div class="spin"></div>Loading…');
+  const qs=['admin_logs','limit='+$('#fLimit').value];
+  if($('#fAction').value.trim()) qs.push('action_filter='+encodeURIComponent($('#fAction').value.trim()));
+  if($('#fStatus').value.trim()) qs.push('status='+encodeURIComponent($('#fStatus').value.trim()));
+  if(ERR) qs.push('errors_only=1');
+  const data=await api(qs.join('&'));
+  const list=data.logs||[];
+  if(!list.length){ $('#rows').innerHTML=''; setState('#reqState','No log entries.'); return; }
+  setState('#reqState','');
+  $('#rows').innerHTML=list.map(l=>`
+    <tr>
+      <td class="when mono">${fmt(l.created_at)}</td>
+      <td class="mono">${esc(l.ip||'')}</td>
+      <td class="mono">${esc(l.method||'')}</td>
+      <td class="mono">${esc(l.action||'')}</td>
+      <td><span class="st ${stClass(l.status)}">${esc(l.status||0)}</span></td>
+      <td class="mono">${esc(l.duration_ms??'')}</td>
+      <td>${esc(l.actor||'')}</td>
+      <td class="err">${esc(l.error||'')}</td>
+    </tr>`).join('');
+}
+
+async function loadPhp(){
+  setState('#phpState','<div class="spin"></div>Reading PHP error log…');
+  const data=await api('admin_php_log&lines='+$('#phpLines').value);
+  const files=data.files||[];
+  if(!files.length){
+    $('#phpBody').innerHTML='';
+    setState('#phpState','No PHP error_log file found.'+(data.configured?(' (configured: '+esc(data.configured)+')'):''));
+    return;
+  }
+  setState('#phpState','');
+  $('#phpBody').innerHTML=files.map(f=>`
+    <div class="logfile">📄 ${esc(f.file)} · ${(f.size/1024).toFixed(1)} KB</div>
+    <pre class="log">${esc((f.tail||[]).join('\n'))||'(empty)'}</pre>`).join('');
+}
+
+if(KEY) showApp();
+</script>
+</body>
+</html>

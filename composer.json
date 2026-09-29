@@ -1,0 +1,21 @@
+{
+    "name": "nadgo/orders-api",
+    "description": "Receives orders from nad-go.com, stores them in MySQL, and emails admin@nad-go.com over SMTP.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.1",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

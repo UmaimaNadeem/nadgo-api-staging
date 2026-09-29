@@ -1,0 +1,3 @@
+# Receipts contain payment info — never serve them directly over the web.
+# They are streamed only to admins via index.php?action=admin_get_receipt.
+Require all denied
