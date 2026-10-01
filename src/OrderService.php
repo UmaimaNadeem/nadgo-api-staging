@@ -16,6 +16,14 @@ class ValidationException extends \RuntimeException {}
 class NotFoundException   extends \RuntimeException {}
 class ConflictException   extends \RuntimeException {}
 class AuthException       extends \RuntimeException {}
+/** Validation error tied to one form field, so the frontend can show it under the right input. */
+class FieldValidationException extends ValidationException
+{
+    public function __construct(string $message, public string $field)
+    {
+        parent::__construct($message);
+    }
+}
 
 class OrderService
 {
@@ -1159,6 +1167,64 @@ class OrderService
         }
 
         return $this->issueSession($email);
+    }
+
+    /**
+     * Logged-in "change password": verify the CURRENT password, then save the new one.
+     * $email comes from the verified session token, never from the request body.
+     * Throws FieldValidationException (-> HTTP 422 + {"field": ...}) for form errors.
+     */
+    public function changePassword(string $email, string $current, string $new, ?string $confirm = null): array
+    {
+        $user = $this->findUserByEmail($email);
+        if (!$user) {
+            throw new AuthException('Invalid or expired session.');
+        }
+        if ($current === '') {
+            throw new FieldValidationException('Please enter your current password.', 'current_password');
+        }
+        if (empty($user['password_hash'])) {
+            // Accounts created by staff / guest checkout have no password yet.
+            throw new FieldValidationException(
+                'This account has no password set yet. Use "Forgot password" to create one.',
+                'current_password'
+            );
+        }
+        if (!password_verify($current, $user['password_hash'])) {
+            throw new FieldValidationException('Current password is incorrect.', 'current_password');
+        }
+        if (strlen($new) < self::MIN_PASSWORD) {
+            throw new FieldValidationException(
+                'New password must be at least ' . self::MIN_PASSWORD . ' characters.',
+                'new_password'
+            );
+        }
+        if (strlen($new) > 128) {
+            throw new FieldValidationException('New password must be 128 characters or fewer.', 'new_password');
+        }
+        if ($new === $current) {
+            throw new FieldValidationException('New password must be different from your current password.', 'new_password');
+        }
+        if ($confirm !== null && $confirm !== $new) {
+            throw new FieldValidationException('Passwords do not match.', 'confirm_password');
+        }
+
+        $pdo = $this->db->pdo();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('UPDATE users SET password_hash = :ph WHERE id = :id')
+                ->execute([':ph' => password_hash($new, PASSWORD_DEFAULT), ':id' => (int) $user['id']]);
+            // Any "forgot password" codes still outstanding must stop working.
+            $pdo->prepare('UPDATE password_resets SET consumed_at = UTC_TIMESTAMP()
+                           WHERE email = :e AND consumed_at IS NULL')
+                ->execute([':e' => strtolower($user['email'])]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+
+        return ['message' => 'Your password has been updated.'];
     }
 
     /** Pull profile fields out of a request body (for seeding a new account). */

@@ -13,9 +13,9 @@ require_once __DIR__ . '/Database.php';
  */
 class CryptoRateService
 {
-    private const string CURRENCY_USDT = 'tether_gbp';
-    private const string CURRENCY_AED  = 'gbp_aed';
-    private const int    CACHE_TTL     = 300; // seconds
+    private const CURRENCY_USDT = 'tether_gbp';
+    private const CURRENCY_AED  = 'gbp_aed';
+    private const CACHE_TTL     = 300; // seconds
 
     public function __construct(private Database $db) {}
 

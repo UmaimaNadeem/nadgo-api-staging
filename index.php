@@ -23,7 +23,7 @@
  *              admin_list_contact_submissions | admin_list_notify_requests
  *
  * Auth:
- *   X-API-Key        -> register/login/create_order        (frontend key)
+ *   X-API-Key        -> register/login/create_order/change_password (frontend key)
  *   X-Admin-Key      -> admin_*                             (admin token)
  *   X-Session-Token  -> logged-in user (from register/login)
  *   tracking_token   -> payment_info/submit_payment/get_order (per-order link)
@@ -522,9 +522,13 @@ try {
             honeypotCheck($b);
             respond(200, ['ok' => true, 'profile' => $service->updateProfile($email, $b)]);
 
-        // ---- change password (logged-in): {current_password, new_password[, confirm_password]} ----
+        // ---- change password (logged-in): headers X-API-Key + X-Session-Token;
+        //      body {website:"", current_password, new_password[, confirm_password]} ----
         case 'change_password':
             requirePost();
+            if (!$auth->checkFrontendKey(header_val('X-API-Key'))) {
+                respond(401, ['ok' => false, 'error' => 'Unauthorized.']);
+            }
             $email = $auth->verifySessionToken(header_val('X-Session-Token'));
             if (!$email) {
                 respond(401, ['ok' => false, 'error' => 'Invalid or expired session. Please log in again.']);
