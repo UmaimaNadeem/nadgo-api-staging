@@ -55,10 +55,13 @@ class DeliveryNoteService
         $this->sectionTitle($page, $draw, 'Customer Details', $y);
         $y += 46;
         $name = trim((string) ($order['customer_name'] ?? ''));
-        $address = $this->formatAddress((array) ($order['shipping_address'] ?? []));
+        $shippingAddress = (array) ($order['shipping_address'] ?? []);
+        $address = $this->formatAddress($shippingAddress, false);
+        $country = trim((string) ($shippingAddress['country'] ?? ''));
         $customerRows = [
             ['Name', $name],
             ['Address', $address],
+            ['Country', $country],
             ['Email', (string) ($order['customer_email'] ?? '')],
             ['Phone', (string) ($order['customer_phone'] ?? '')],
         ];
@@ -92,7 +95,23 @@ class DeliveryNoteService
         $y += 46;
         $items = is_array($order['items'] ?? null) ? $order['items'] : [];
         [$page, $draw, $y] = $this->itemsTable($pages, $page, $draw, $y, $items);
-        $y += 34;
+        $y += 28;
+
+        // Order Notes block directly below Items Dispatched.
+        $orderNotes = trim((string) ($order['order_notes'] ?? ''));
+        $notesHeight = 92;
+        if ($y + 46 + $notesHeight > self::PAGE_H - self::MARGIN) {
+            $pages->addImage($page);
+            $page->clear();
+            $page->destroy();
+            $page = $this->newPage();
+            $draw = $this->newDraw();
+            $y = self::MARGIN;
+        }
+        $this->sectionTitle($page, $draw, 'Order Notes', $y);
+        $y += 46;
+        $this->notesBlock($page, $draw, $y, $orderNotes, $notesHeight);
+        $y += $notesHeight + 34;
 
         // If acknowledgement won't fit, move it to a clean page.
         if ($y + 300 > self::PAGE_H - self::MARGIN) {
@@ -295,6 +314,20 @@ class DeliveryNoteService
         return [$page, $draw, $y];
     }
 
+    private function notesBlock(Imagick $page, ImagickDraw $draw, float $y, string $notes, float $height): void
+    {
+        $x = self::MARGIN;
+        $w = self::PAGE_W - (self::MARGIN * 2);
+        $this->rect($page, $draw, $x, $y, $x + $w, $y + $height);
+
+        $lines = $this->wrap($notes, 105);
+        $lineY = $y + 31;
+        foreach (array_slice($lines, 0, 3) as $line) {
+            $this->text($page, $draw, $line, $x + 14, $lineY, 18, false);
+            $lineY += 26;
+        }
+    }
+
     private function acknowledgementTable(Imagick $page, ImagickDraw $draw, float $y): void
     {
         $x = self::MARGIN;
@@ -321,15 +354,22 @@ class DeliveryNoteService
         }
     }
 
-    private function formatAddress(array $address): string
+    private function formatAddress(array $address, bool $includeCountry = true): string
     {
-        return implode(', ', array_values(array_filter([
+        $parts = [
             trim((string) ($address['address1'] ?? '')),
             trim((string) ($address['address2'] ?? '')),
             trim((string) ($address['city'] ?? '')),
             trim((string) ($address['postcode'] ?? '')),
-            trim((string) ($address['country'] ?? '')),
-        ], static fn($v) => $v !== '')));
+        ];
+        if ($includeCountry) {
+            $parts[] = trim((string) ($address['country'] ?? ''));
+        }
+
+        return implode(', ', array_values(array_filter(
+            $parts,
+            static fn($v) => $v !== ''
+        )));
     }
 
     private function wrap(string $text, int $maxChars): array

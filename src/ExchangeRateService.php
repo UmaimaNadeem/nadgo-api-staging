@@ -9,9 +9,9 @@
  */
 class ExchangeRateService
 {
-    private const BASE = 'GBP';
-    private const CACHE_TTL = 21600; // 6 hours
-    private const QUOTES = [
+    private const string BASE = 'GBP';
+    private const int CACHE_TTL = 21600; // 6 hours
+    private const array QUOTES = [
         'EUR', 'SEK', 'RUB', 'NOK', 'DKK', 'RON', 'HUF', 'SAR', 'AED', 'CNY',
     ];
 

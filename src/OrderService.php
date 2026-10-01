@@ -1503,12 +1503,26 @@ class OrderService
                 }
             }
         }
+        $shipPhone = !empty($d['ship_to_different_address'])
+            ? trim((string) ($d['ship_phone'] ?? ''))
+            : $phone;
+        if ($shipPhone === '') $shipPhone = $phone;
 
         // ---- items & money -------------------------------------------------
         $items = $this->validateItems($d['items'] ?? []);
         $subtotal = round(array_sum(array_column($items, 'line_total')), 2);
-        $shipping = max(0.0, $this->money($d['shipping_amount'] ?? 0));
-        $discount = min($subtotal, max(0.0, $this->money($d['discount_amount'] ?? 0)));
+        $quotedShipping = max(0.0, $this->money($d['shipping_amount'] ?? 0));
+        $includeShipping = !array_key_exists('include_shipping_cost', $d) || !empty($d['include_shipping_cost']);
+        $shipping = $includeShipping ? $quotedShipping : 0.0;
+        $discountType  = strtolower(trim((string) ($d['discount_type'] ?? 'fixed')));
+        $discountValue = max(0.0, $this->money($d['discount_value'] ?? ($d['discount_amount'] ?? 0)));
+        if ($discountType === 'percentage') {
+            $discountValue = min(100.0, $discountValue);
+            $discount = round($subtotal * ($discountValue / 100), 2);
+        } else {
+            $discountType = 'fixed';
+            $discount = min($subtotal, $discountValue);
+        }
 
         // Same rule as web checkout: UK prices already include 20% VAT (informational only).
         $isUk    = $this->isUkCountry($ship['country']);
@@ -1531,6 +1545,7 @@ class OrderService
             throw new ValidationException('Order notes must be 2000 characters or fewer.');
         }
         $carrier    = $this->str($d, 'shipping_carrier');
+        $methodCode = $this->str($d, 'shipping_method_code');
         $methodName = $this->str($d, 'shipping_method_name');
         $currency   = strtoupper($this->str($d, 'currency')) ?: 'GBP';
         $orderRef   = $this->str($d, 'order_ref') ?: ('NG-' . strtoupper(bin2hex(random_bytes(4))));
@@ -1572,6 +1587,7 @@ class OrderService
                 'ship_city'       => $ship['city'],
                 'ship_postcode'   => $ship['postcode'],
                 'ship_country'    => $ship['country'],
+                'ship_phone'      => $shipPhone,
                 'order_notes'     => $notes !== '' ? $notes : null,
                 'currency'        => $currency,
                 'subtotal_amount' => $subtotal,
@@ -1586,7 +1602,8 @@ class OrderService
                 'paid_at'         => $payStatus === 'paid' ? gmdate('Y-m-d H:i:s') : null,
                 'delivery_status' => $delStatus,
                 'shipping_carrier'     => $carrier !== '' ? $carrier : null,
-                'shipping_method_name' => $methodName !== '' ? $methodName : null,
+                'shipping_method_code'  => $methodCode !== '' ? $methodCode : null,
+                'shipping_method_name'  => $methodName !== '' ? $methodName : null,
                 'raw_payload'     => json_encode($d, JSON_UNESCAPED_UNICODE),
                 'source_ip'       => $ip,
             ];
@@ -1618,13 +1635,23 @@ class OrderService
             throw $e;
         }
 
+        // Manual orders use the same customer order-confirmation email/template
+        // as orders placed through the storefront. Email failure must not undo
+        // an order that has already been created successfully.
+        $order = $this->findById($orderId);
+        try {
+            $this->mailer->sendOrderConfirmation($order, $items);
+        } catch (\Throwable $e) {
+            error_log('[nadgo-api] manual-order customer confirmation email failed: ' . $e->getMessage());
+        }
+
         return [
             'order_ref'        => $orderRef,
             'tracking_token'   => $token,
             'customer_created' => $customerCreated,
             'stock_deducted'   => $deductStock,
             'stock_report'     => $stockReport,
-            'order'            => $this->presentOrder($this->findById($orderId), true),
+            'order'            => $this->presentOrder($order, true),
         ];
     }
 
@@ -1787,6 +1814,145 @@ class OrderService
             ':status'   => $newStatus,
             ':ref'      => $ref,
         ]);
+    }
+
+    /**
+     * Synchronize active FedEx orders from FedEx Basic Integrated Visibility.
+     * Only moves orders forward: processing -> shipped -> delivered.
+     */
+    public function syncFedExTracking(int $limit = 300): array
+    {
+        if (!$this->fedEx || !$this->fedEx->isConfigured()) {
+            throw new RuntimeException('FedEx is not configured.');
+        }
+
+        $limit = max(1, min(3000, $limit));
+        $stmt = $this->db->pdo()->prepare(
+            "SELECT order_ref, shipping_tracking_no, delivery_status
+               FROM orders
+              WHERE LOWER(TRIM(COALESCE(shipping_carrier, ''))) = 'fedex'
+                AND shipping_tracking_no IS NOT NULL
+                AND TRIM(shipping_tracking_no) <> ''
+                AND delivery_status NOT IN ('delivered', 'cancelled')
+              ORDER BY id ASC
+              LIMIT " . $limit
+        );
+        $stmt->execute();
+        $orders = $stmt->fetchAll();
+
+        $summary = [
+            'checked' => 0,
+            'updated' => 0,
+            'shipped' => 0,
+            'delivered' => 0,
+            'unchanged' => 0,
+            'errors' => [],
+        ];
+
+        foreach (array_chunk($orders, 30) as $batch) {
+            $numbers = array_values(array_filter(array_map(
+                static fn(array $o): string => trim((string) ($o['shipping_tracking_no'] ?? '')),
+                $batch
+            )));
+
+            if ($numbers === []) continue;
+
+            try {
+                $tracks = $this->fedEx->trackShipments($numbers);
+            } catch (\Throwable $e) {
+                $summary['errors'][] = 'FedEx tracking batch failed: ' . $e->getMessage();
+                continue;
+            }
+
+            foreach ($batch as $order) {
+                $summary['checked']++;
+                $ref = (string) $order['order_ref'];
+                $tracking = trim((string) $order['shipping_tracking_no']);
+                $current = strtolower(trim((string) $order['delivery_status']));
+                $track = $tracks[$tracking] ?? null;
+
+                if (!$track) {
+                    $summary['unchanged']++;
+                    continue;
+                }
+
+                $target = $this->mapFedExTrackingStatus(
+                    (string) ($track['status_code'] ?? ''),
+                    (string) ($track['status_text'] ?? ''),
+                    is_array($track['events'] ?? null) ? $track['events'] : []
+                );
+
+                // Do not move backwards or change a state FedEx has not clearly confirmed.
+                $rank = ['pending' => 0, 'processing' => 1, 'shipped' => 2, 'delivered' => 3];
+                if ($target === null || !isset($rank[$current], $rank[$target]) || $rank[$target] <= $rank[$current]) {
+                    $summary['unchanged']++;
+                    continue;
+                }
+
+                try {
+                    // Reuse the existing delivery update path so shipped/delivered
+                    // customer notification emails continue to work exactly as before.
+                    $this->adminUpdateDelivery($ref, [
+                        'delivery_status' => $target,
+                        'shipping_carrier' => 'FedEx',
+                        'shipping_tracking_no' => $tracking,
+                    ]);
+                    $summary['updated']++;
+                    $summary[$target]++;
+                } catch (\Throwable $e) {
+                    $summary['errors'][] = $ref . ': ' . $e->getMessage();
+                }
+            }
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Convert FedEx's latest status/scan information into NadGo's delivery states.
+     * Conservative by design: unknown statuses do not change the order.
+     */
+    private function mapFedExTrackingStatus(string $code, string $text, array $events = []): ?string
+    {
+        $code = strtoupper(trim($code));
+        $haystack = strtolower(trim($text));
+
+        // FedEx's delivered code is DL. Text fallback protects against locale/API variations.
+        if ($code === 'DL' || str_contains($haystack, 'delivered')) {
+            return 'delivered';
+        }
+
+        // A physical FedEx scan/tender/in-transit event means the parcel has left our workflow.
+        $shippedCodes = [
+            'PU', // picked up
+            'IT', // in transit
+            'OD', // out for delivery
+            'AR', 'AF', 'DP', 'CC', 'CD', 'CP', 'DE', 'SE',
+        ];
+        if (in_array($code, $shippedCodes, true)) {
+            return 'shipped';
+        }
+
+        foreach ([
+            'picked up', 'pickup', 'in transit', 'out for delivery',
+            'at fedex', 'at local fedex', 'departed fedex', 'arrived at fedex',
+            'tendered to fedex', 'on the way'
+        ] as $phrase) {
+            if (str_contains($haystack, $phrase)) return 'shipped';
+        }
+
+        foreach ($events as $event) {
+            if (!is_array($event)) continue;
+            $eventCode = strtoupper(trim((string) ($event['event_type'] ?? '')));
+            $eventText = strtolower(trim((string) ($event['description'] ?? '')));
+            if ($eventCode === 'DL' || str_contains($eventText, 'delivered')) return 'delivered';
+            if (in_array($eventCode, $shippedCodes, true)) return 'shipped';
+            foreach (['picked up', 'pickup', 'in transit', 'out for delivery', 'tendered to fedex'] as $phrase) {
+                if (str_contains($eventText, $phrase)) return 'shipped';
+            }
+        }
+
+        return null;
     }
 
     /** Clear FedEx shipment data after FedEx confirms cancellation. */

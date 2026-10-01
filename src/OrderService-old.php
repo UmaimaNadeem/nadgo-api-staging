@@ -30,6 +30,7 @@ class OrderService
     private ?FenaService    $fena           = null;
     private ?ShippingService $shippingService = null;
     private ?FedExService $fedEx = null;
+    private ?array $orderColumnsCache = null;
 
     public function __construct(
         private Database $db,
@@ -126,7 +127,12 @@ class OrderService
 
         // Money breakdown — use provided values, else derive from items.
         $itemsSubtotal = round(array_sum(array_column($items, 'line_total')), 2);
-        $subtotal = isset($d['subtotal']) ? $this->money($this->first($d, ['subtotal', 'subtotal_amount'])) : $itemsSubtotal;
+        // The subtotal is always the sum of the items; a client-sent subtotal must match it.
+        if (isset($d['subtotal'])
+            && abs($this->money($this->first($d, ['subtotal', 'subtotal_amount'])) - $itemsSubtotal) > self::MONEY_TOLERANCE) {
+            throw new ValidationException('Subtotal does not match the items.');
+        }
+        $subtotal = $itemsSubtotal;
         $shipping = $this->money($this->first($d, ['shipping', 'shipping_amount']) ?: 0);
         $tax      = $this->money($this->first($d, ['tax', 'vat', 'tax_amount']) ?: 0);
         $taxRate  = $this->money($this->first($d, ['tax_rate', 'vat_rate']) ?: 0);
@@ -150,78 +156,33 @@ class OrderService
         // a client from changing the shipping charge while still allowing legacy
         // countries with a single standard method.
         $shippingMethodCode = trim((string) ($d['shipping_method_code'] ?? ''));
-        $shippingCarrier = trim((string) ($d['shipping_carrier'] ?? ''));
+        $shippingCarrier = '';
+        $shippingMethodName = '';
 
-        $isFedExMethod =
-            $this->isUkCountry($ship['country']) &&
-            str_starts_with($shippingMethodCode, 'FEDEX_');
+        // UK checkout uses fixed customer-facing FedEx prices. Validate on the
+        // server; never trust a client-supplied shipping amount or service name.
+        $fixedUkFedExMethods = [
+            'FEDEX_PRIORITY' => ['name' => 'FedEx® Priority', 'rate' => 4.99],
+            'FEDEX_PRIORITY_EXPRESS' => ['name' => 'FedEx® Priority Express', 'rate' => 8.99],
+            'FEDEX_FIRST' => ['name' => 'FedEx® First', 'rate' => 12.99],
+        ];
 
-        if ($isFedExMethod) {
-            if (!$this->fedEx || !$this->fedEx->isConfigured()) {
-                throw new ValidationException('FedEx shipping is currently unavailable.');
+        if ($this->isUkCountry($ship['country'])) {
+            $selectedFixedMethod = $fixedUkFedExMethods[$shippingMethodCode] ?? null;
+            if ($selectedFixedMethod === null) {
+                throw new ValidationException('Please select a valid FedEx delivery method.');
             }
 
-            try {
-                $fedExResult = $this->fedEx->getRates([
-                    'country_code' => 'GB',
-                    'postal_code'  => $ship['postcode'],
-                    'residential'  => false,
-                ], [
-                    'weight'      => 1.0,
-                    'weight_unit' => 'KG',
-                    'dimensions'  => null,
-                ]);
-            } catch (\Throwable $e) {
-                error_log('[nadgo-api] FedEx order rate validation failed: ' . $e->getMessage());
-                throw new ValidationException(
-                    'We could not verify the selected FedEx shipping rate. Please try again.'
-                );
-            }
-
-            $selectedFedExRate = null;
-
-            foreach (($fedExResult['rates'] ?? []) as $rate) {
-                if ((string) ($rate['service_type'] ?? '') === $shippingMethodCode) {
-                    $selectedFedExRate = $rate;
-                    break;
-                }
-            }
-
-            if (!$selectedFedExRate) {
-                throw new ValidationException(
-                    'The selected FedEx shipping service is no longer available.'
-                );
-            }
-
-            // Apply the same NadGo markup used by the public FedEx rates endpoint.
-            $markupPercent = max(
-                0,
-                (float) ($this->config['fedex']['rate_markup_percent'] ?? 20)
-            );
-
-            $carrierRate = round(
-                (float) ($selectedFedExRate['amount'] ?? 0),
-                2
-            );
-
-            $expectedShipping = round(
-                $carrierRate * (1 + ($markupPercent / 100)),
-                2
-            );
-
+            $expectedShipping = $selectedFixedMethod['rate'];
             if (abs($shipping - $expectedShipping) > self::MONEY_TOLERANCE) {
                 throw new ValidationException(
                     "Shipping amount is incorrect. Expected £{$expectedShipping} for " .
-                    (string) ($selectedFedExRate['service_name'] ?? 'FedEx')
-                    . '.'
+                    $selectedFixedMethod['name'] . '.'
                 );
             }
 
-            // Use FedEx's canonical service name instead of trusting the browser.
-            $shippingCarrier = (string) (
-                $selectedFedExRate['service_name'] ?? $shippingMethodCode
-            );
-
+            $shippingCarrier = 'FedEx';
+            $shippingMethodName = $selectedFixedMethod['name'];
             $shipping = $expectedShipping;
 
         } elseif ($this->shippingService) {
@@ -252,9 +213,14 @@ class OrderService
                 $selectedMethod['method_code'] ?? 'standard'
             );
 
-            $shippingCarrier = (string) (
+            $shippingMethodName = (string) (
                 $selectedMethod['method_name'] ?? 'Standard shipping'
             );
+
+            $shippingCarrier = trim((string) ($selectedMethod['carrier'] ?? ''));
+            if ($shippingCarrier === '') {
+                $shippingCarrier = 'Royal Mail';
+            }
 
             $freeThreshold =
                 $selectedMethod['free_threshold'] !== null
@@ -320,14 +286,14 @@ class OrderService
                      ship_city, ship_postcode, ship_country, order_notes,
                      currency, subtotal_amount, shipping_amount, tax_amount, tax_rate,
                      coupon_code, discount_amount, total_amount,
-                     payment_method, shipping_carrier, raw_payload, source_ip)
+                     payment_method, shipping_carrier, shipping_method_code, shipping_method_name, raw_payload, source_ip)
                  VALUES
                     (:ref, :token, :uid, :email, :phone,
                      :bfn, :bln, :ba1, :ba2, :bcity, :bpc, :bcountry,
                      :fn, :ln, :a1, :a2, :city, :pc, :country, :notes,
                      :cur, :sub, :ship, :tax, :rate,
                      :coupon, :disc, :total,
-                     :method, :shipcarrier, :raw, :ip)',
+                     :method, :shipcarrier, :shipmethodcode, :shipmethodname, :raw, :ip)',
                 [
                     ':ref'     => $orderRef,
                     ':token'   => $token,
@@ -359,6 +325,8 @@ class OrderService
                     ':total'   => $total,
                     ':method'  => $method ?: null,
                     ':shipcarrier' => $shippingCarrier !== '' ? $shippingCarrier : null,
+                    ':shipmethodcode' => $shippingMethodCode !== '' ? $shippingMethodCode : null,
+                    ':shipmethodname' => $shippingMethodName !== '' ? $shippingMethodName : null,
                     ':raw'     => json_encode($d, JSON_UNESCAPED_UNICODE),
                     ':ip'      => $ip,
                 ]
@@ -1408,6 +1376,7 @@ class OrderService
             'paid_at'          => $o['paid_at'],
             'delivery_status'  => $o['delivery_status'],
             'payment_method'   => $o['payment_method'],
+            'order_source'     => $o['order_source'] ?? 'web',
             'currency'         => $o['currency'],
             'subtotal_amount'  => $o['subtotal_amount'],
             'shipping_amount'  => $o['shipping_amount'],
@@ -1416,8 +1385,10 @@ class OrderService
             'coupon_code'      => $o['coupon_code']     ?? null,
             'discount_amount'  => $o['discount_amount'] ?? 0,
             'total_amount'     => $o['total_amount'],
-            'shipping_carrier'     => $o['shipping_carrier'],
-            'shipping_tracking_no' => $o['shipping_tracking_no'],
+            'shipping_carrier'     => $o['shipping_carrier'] ?? null,
+            'shipping_method_code' => $o['shipping_method_code'] ?? null,
+            'shipping_method_name' => $o['shipping_method_name'] ?? null,
+            'shipping_tracking_no' => $o['shipping_tracking_no'] ?? null,
             'rm_order_id'          => $o['rm_order_id'] ?? null,
             'delivery_note'        => $o['delivery_note'],
             'created_at'           => $o['created_at'],
@@ -1447,6 +1418,241 @@ class OrderService
         $stmt = $this->db->pdo()->prepare($sql);
         $stmt->execute($args);
         return array_map(fn($o) => $this->presentOrder($o, true), $stmt->fetchAll());
+    }
+
+    // =========================================================================
+    // Admin — manual orders (created by staff, no payment step)
+    // =========================================================================
+
+    /** Column names that really exist in `orders` (so the insert works on older DBs too). */
+    private function orderColumns(): array
+    {
+        if ($this->orderColumnsCache === null) {
+            $rows = $this->db->pdo()->query('SHOW COLUMNS FROM orders')->fetchAll();
+            $this->orderColumnsCache = array_column($rows, 'Field');
+        }
+        return $this->orderColumnsCache;
+    }
+
+    /** Search customers (users table) by email, name or phone. Empty query = latest customers. */
+    public function adminSearchCustomers(string $q, int $limit = 10): array
+    {
+        $limit = max(1, min(25, $limit));
+        $sql = 'SELECT id, email, phone, first_name, last_name, address1, address2, city, postcode, country
+                  FROM users';
+        $args = [];
+        $q = trim($q);
+        if ($q !== '') {
+            // Escape LIKE wildcards. Each placeholder is used once (native prepares).
+            $like = '%' . addcslashes($q, '%_\\') . '%';
+            $sql .= ' WHERE email LIKE :q1 OR first_name LIKE :q2 OR last_name LIKE :q3
+                         OR CONCAT_WS(" ", first_name, last_name) LIKE :q4 OR phone LIKE :q5';
+            $args = [':q1' => $like, ':q2' => $like, ':q3' => $like, ':q4' => $like, ':q5' => $like];
+        }
+        $sql .= ' ORDER BY id DESC LIMIT ' . $limit;
+        $stmt = $this->db->pdo()->prepare($sql);
+        $stmt->execute($args);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Create an order on behalf of a customer from the admin portal.
+     *  - No payment proof / payment instructions / customer emails on creation.
+     *  - Customer is looked up by email; if new, a customer record is created (unless save_customer=false).
+     *  - Prices are whatever the admin typed (special deals allowed); stock is only touched if deduct_stock=true.
+     */
+    public function adminCreateManualOrder(array $d, string $ip): array
+    {
+        // ---- customer ------------------------------------------------------
+        $email = strtolower($this->first($d, ['email', 'customer_email']));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new ValidationException('A valid customer email is required.');
+        }
+        $phone = $this->first($d, ['phone', 'customer_phone']);
+
+        $bill = [
+            'first_name' => $this->first($d, ['first_name']),
+            'last_name'  => $this->first($d, ['last_name']),
+            'address1'   => $this->first($d, ['address1', 'address']),
+            'address2'   => $this->first($d, ['address2']),
+            'city'       => $this->first($d, ['city']),
+            'postcode'   => $this->first($d, ['postcode']),
+            'country'    => $this->first($d, ['country']),
+        ];
+        foreach (['first_name', 'last_name', 'address1', 'city', 'postcode', 'country'] as $req) {
+            if ($bill[$req] === '') {
+                throw new ValidationException('Customer ' . str_replace(['address1', '_'], ['address', ' '], $req) . ' is required.');
+            }
+        }
+
+        // Shipping defaults to the customer address; optional different address.
+        $ship = $bill;
+        if (!empty($d['ship_to_different_address'])) {
+            $ship = [
+                'first_name' => $this->first($d, ['ship_first_name']),
+                'last_name'  => $this->first($d, ['ship_last_name']),
+                'address1'   => $this->first($d, ['ship_address1']),
+                'address2'   => $this->first($d, ['ship_address2']),
+                'city'       => $this->first($d, ['ship_city']),
+                'postcode'   => $this->first($d, ['ship_postcode']),
+                'country'    => $this->first($d, ['ship_country']),
+            ];
+            foreach (['first_name', 'last_name', 'address1', 'city', 'postcode', 'country'] as $req) {
+                if ($ship[$req] === '') {
+                    throw new ValidationException('Shipping ' . str_replace(['address1', '_'], ['address', ' '], $req) . ' is required.');
+                }
+            }
+        }
+        $shipPhone = !empty($d['ship_to_different_address'])
+            ? trim((string) ($d['ship_phone'] ?? ''))
+            : $phone;
+        if ($shipPhone === '') $shipPhone = $phone;
+
+        // ---- items & money -------------------------------------------------
+        $items = $this->validateItems($d['items'] ?? []);
+        $subtotal = round(array_sum(array_column($items, 'line_total')), 2);
+        $quotedShipping = max(0.0, $this->money($d['shipping_amount'] ?? 0));
+        $includeShipping = !array_key_exists('include_shipping_cost', $d) || !empty($d['include_shipping_cost']);
+        $shipping = $includeShipping ? $quotedShipping : 0.0;
+        $discountType  = strtolower(trim((string) ($d['discount_type'] ?? 'fixed')));
+        $discountValue = max(0.0, $this->money($d['discount_value'] ?? ($d['discount_amount'] ?? 0)));
+        if ($discountType === 'percentage') {
+            $discountValue = min(100.0, $discountValue);
+            $discount = round($subtotal * ($discountValue / 100), 2);
+        } else {
+            $discountType = 'fixed';
+            $discount = min($subtotal, $discountValue);
+        }
+
+        // Same rule as web checkout: UK prices already include 20% VAT (informational only).
+        $isUk    = $this->isUkCountry($ship['country']);
+        $vatBase = max(0.0, round($subtotal - $discount + $shipping, 2));
+        $tax     = $isUk ? round($vatBase * (self::VAT_RATE / (1 + self::VAT_RATE)), 2) : 0.0;
+        $taxRate = $isUk ? self::VAT_RATE : 0.0;
+        $total   = max(0.0, round($subtotal + $shipping - $discount, 2));
+
+        // ---- statuses & misc ----------------------------------------------
+        $payStatus = $this->str($d, 'payment_status') ?: 'paid';
+        if (!in_array($payStatus, ['paid', 'pending'], true)) {
+            throw new ValidationException("payment_status must be 'paid' or 'pending'.");
+        }
+        $delStatus = $this->str($d, 'delivery_status') ?: 'pending';
+        if (!in_array($delStatus, self::DELIVERY_STATES, true)) {
+            throw new ValidationException('delivery_status must be one of: ' . implode(', ', self::DELIVERY_STATES));
+        }
+        $notes = trim((string) ($d['order_notes'] ?? ''));
+        if (strlen($notes) > 2000) {
+            throw new ValidationException('Order notes must be 2000 characters or fewer.');
+        }
+        $carrier    = $this->str($d, 'shipping_carrier');
+        $methodCode = $this->str($d, 'shipping_method_code');
+        $methodName = $this->str($d, 'shipping_method_name');
+        $currency   = strtoupper($this->str($d, 'currency')) ?: 'GBP';
+        $orderRef   = $this->str($d, 'order_ref') ?: ('NG-' . strtoupper(bin2hex(random_bytes(4))));
+        $token      = bin2hex(random_bytes(16));
+        $saveCustomer = !array_key_exists('save_customer', $d) || !empty($d['save_customer']);
+        $deductStock  = !empty($d['deduct_stock']);
+
+        // ---- write ---------------------------------------------------------
+        $customerCreated = false;
+        $stockReport = [];
+        $this->db->beginTransaction();
+        try {
+            $userId = null;
+            $existing = $this->findUserByEmail($email);
+            if ($existing) {
+                $userId = $this->findOrCreateUser($email, $phone, $bill); // backfills empty profile only
+            } elseif ($saveCustomer) {
+                $userId = $this->findOrCreateUser($email, $phone, $bill);
+                $customerCreated = true;
+            }
+
+            $row = [
+                'order_ref'       => $orderRef,
+                'tracking_token'  => $token,
+                'user_id'         => $userId,
+                'customer_email'  => $email,
+                'customer_phone'  => $phone,
+                'bill_first_name' => $bill['first_name'],
+                'bill_last_name'  => $bill['last_name'],
+                'bill_address1'   => $bill['address1'],
+                'bill_address2'   => $bill['address2'] ?: null,
+                'bill_city'       => $bill['city'],
+                'bill_postcode'   => $bill['postcode'],
+                'bill_country'    => $bill['country'],
+                'ship_first_name' => $ship['first_name'],
+                'ship_last_name'  => $ship['last_name'],
+                'ship_address1'   => $ship['address1'],
+                'ship_address2'   => $ship['address2'] ?: null,
+                'ship_city'       => $ship['city'],
+                'ship_postcode'   => $ship['postcode'],
+                'ship_country'    => $ship['country'],
+                'ship_phone'      => $shipPhone,
+                'order_notes'     => $notes !== '' ? $notes : null,
+                'currency'        => $currency,
+                'subtotal_amount' => $subtotal,
+                'shipping_amount' => $shipping,
+                'tax_amount'      => $tax,
+                'tax_rate'        => $taxRate,
+                'discount_amount' => $discount,
+                'total_amount'    => $total,
+                'payment_method'  => 'manual',
+                'order_source'    => 'manual',
+                'payment_status'  => $payStatus,
+                'paid_at'         => $payStatus === 'paid' ? gmdate('Y-m-d H:i:s') : null,
+                'delivery_status' => $delStatus,
+                'shipping_carrier'     => $carrier !== '' ? $carrier : null,
+                'shipping_method_code'  => $methodCode !== '' ? $methodCode : null,
+                'shipping_method_name'  => $methodName !== '' ? $methodName : null,
+                'raw_payload'     => json_encode($d, JSON_UNESCAPED_UNICODE),
+                'source_ip'       => $ip,
+            ];
+            // Keep only columns that exist in this database.
+            $row = array_intersect_key($row, array_flip($this->orderColumns()));
+
+            $cols = array_keys($row);
+            $sql  = 'INSERT INTO orders (' . implode(', ', $cols) . ') VALUES ('
+                  . implode(', ', array_map(fn($c) => ':' . $c, $cols)) . ')';
+            $params = [];
+            foreach ($row as $c => $v) $params[':' . $c] = $v;
+
+            $orderId = (int) $this->db->insert($sql, $params);
+            $this->insertItems($orderId, $items);
+            if ($deductStock) {
+                // Checks stock AND subtracts in one atomic step; throws if not enough.
+                $stockReport = $this->productService?->reserveStock($items) ?? [];
+            }
+            $this->db->commit();
+        } catch (\PDOException $e) {
+            $this->db->rollBack();
+            if ($e->getCode() === '23000') {
+                throw new ConflictException('An order with this order_ref already exists.');
+            }
+            throw $e;
+        } catch (\Throwable $e) {
+            // e.g. "out of stock" -> undo the whole order
+            $this->db->rollBack();
+            throw $e;
+        }
+
+        // Manual orders use the same customer order-confirmation email/template
+        // as orders placed through the storefront. Email failure must not undo
+        // an order that has already been created successfully.
+        $order = $this->findById($orderId);
+        try {
+            $this->mailer->sendOrderConfirmation($order, $items);
+        } catch (\Throwable $e) {
+            error_log('[nadgo-api] manual-order customer confirmation email failed: ' . $e->getMessage());
+        }
+
+        return [
+            'order_ref'        => $orderRef,
+            'tracking_token'   => $token,
+            'customer_created' => $customerCreated,
+            'stock_deducted'   => $deductStock,
+            'stock_report'     => $stockReport,
+            'order'            => $this->presentOrder($order, true),
+        ];
     }
 
     public function adminVerifyPayment(string $ref, string $decision, ?string $reason): array
@@ -1578,6 +1784,59 @@ class OrderService
                  delivery_status      = :status
              WHERE order_ref = :ref"
         )->execute([':rmid' => $rmOrderId, ':tracking' => $tracking, ':status' => $newStatus, ':ref' => $ref]);
+    }
+
+    /** Save a successfully-created FedEx shipment against the order. */
+    public function saveFedExShipment(string $ref, string $trackingNumber): void
+    {
+        $order = $this->findByRef($ref);
+        if (!$order) {
+            throw new NotFoundException('Order not found.');
+        }
+
+        $trackingNumber = trim($trackingNumber);
+        if ($trackingNumber === '') {
+            throw new ValidationException('FedEx tracking number is required.');
+        }
+
+        $newStatus = $order['delivery_status'] === 'pending'
+            ? 'processing'
+            : $order['delivery_status'];
+
+        $this->db->pdo()->prepare(
+            "UPDATE orders
+             SET shipping_carrier     = 'FedEx',
+                 shipping_tracking_no = :tracking,
+                 delivery_status      = :status
+             WHERE order_ref = :ref"
+        )->execute([
+            ':tracking' => $trackingNumber,
+            ':status'   => $newStatus,
+            ':ref'      => $ref,
+        ]);
+    }
+
+    /** Clear FedEx shipment data after FedEx confirms cancellation. */
+    public function clearFedExShipment(string $ref): void
+    {
+        $order = $this->findByRef($ref);
+        if (!$order) {
+            throw new NotFoundException('Order not found.');
+        }
+
+        $newStatus = $order['delivery_status'] === 'processing'
+            ? 'pending'
+            : $order['delivery_status'];
+
+        $this->db->pdo()->prepare(
+            "UPDATE orders
+             SET shipping_tracking_no = NULL,
+                 delivery_status      = :status
+             WHERE order_ref = :ref"
+        )->execute([
+            ':status' => $newStatus,
+            ':ref'    => $ref,
+        ]);
     }
 
     /** Clear Royal Mail shipment data (after cancellation). */

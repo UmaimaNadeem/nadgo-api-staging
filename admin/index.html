@@ -200,13 +200,19 @@
   .actions-nowrap{flex-wrap:nowrap}
 
   /* Manual order modal */
-  .modal.wide{width:880px;max-height:92vh;overflow:auto}
-  .modal.wide .modal-head{position:sticky;top:0;background:var(--surface);z-index:2}
-  .no-sec{margin-bottom:22px}
-  .no-sec>h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);margin:0 0 10px}
-  .no-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .modal.wide{width:min(1120px,96vw);max-height:94vh;overflow:hidden;display:none;flex-direction:column}
+  .modal.wide.show{display:flex}
+  .modal.wide .modal-head{flex:none;background:var(--surface);z-index:3;padding:18px 22px}
+  .modal.wide .modal-head h2{font-size:18px}
+  .modal.wide .modal-body{overflow:auto;padding:20px 22px 0}
+  .no-sec{margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+  .no-sec>h3{font-size:20px;font-weight:800;text-transform:none;letter-spacing:0;color:var(--text);margin:0 0 18px;display:flex;align-items:center;gap:6px}
+  .no-customer-search{display:flex;gap:10px;align-items:end}
+  .no-customer-search .no-suggest{flex:1;margin-bottom:0}
+  .no-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
   .no-grid .span2{grid-column:span 2}
   .no-grid .span3{grid-column:span 3}
+  .no-grid .span4{grid-column:1/-1}
   .no-suggest{position:relative}
   .no-results{position:absolute;left:0;right:0;top:100%;z-index:5;background:var(--surface);border:1px solid var(--border);
     border-radius:10px;box-shadow:var(--shadow-lg);max-height:240px;overflow:auto;margin-top:4px}
@@ -216,22 +222,50 @@
   .no-results .opt .em{font-size:12px;color:var(--text-2)}
   .no-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:8px;
     background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
-  .no-items{width:100%;border-collapse:collapse}
-  .no-items th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);text-align:left;padding:6px 6px}
-  .no-items td{padding:4px 6px;vertical-align:middle}
-  .no-items td input{padding:8px 10px}
-  .no-items .lt{white-space:nowrap;text-align:right;font-weight:600}
-  .no-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
-  .no-add select{flex:1;min-width:220px;width:auto}
-  .no-tot{margin-left:auto;max-width:320px}
-  .no-tot .kv{padding:3px 0}
-  .no-tot .grand{border-top:1px solid var(--border);margin-top:6px;padding-top:8px;font-weight:800;font-size:15px}
-  .no-stock{font-size:11.5px;margin-top:3px;color:var(--text-2)}
+  .no-subcard{margin-top:14px;padding:15px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}
+  .no-subtitle{font-size:12px;font-weight:700;color:var(--text);margin:0 0 12px}
+  .no-items-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px}
+  .no-items{width:100%;min-width:760px;border-collapse:collapse;table-layout:fixed}
+  .no-items thead th{position:static;background:var(--surface-2);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2);text-align:left;padding:9px 8px}
+  .no-items tbody td{padding:10px 8px;vertical-align:top;border-top:1px solid var(--border);border-bottom:0;overflow:hidden}
+  .no-items tbody td:first-child{position:relative;padding-bottom:34px}
+  .no-items tbody tr{cursor:default}
+  .no-items tbody tr:hover{background:transparent}
+  .no-items td input{display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0;height:42px;padding:8px 10px;margin:0}
+  /* Keep focus styling inside the item cell so focusing/editing a field never
+     changes the table geometry or visually pushes neighbouring columns. */
+  .no-items td input:focus{border-width:1px;border-color:var(--primary);box-shadow:inset 0 0 0 1px var(--primary);outline:none}
+  .no-items .lt{white-space:nowrap;text-align:right;font-weight:700;vertical-align:top;padding-top:20px}
+  .no-items td:last-child{vertical-align:top;text-align:center;overflow:visible;padding-top:14px}
+  .no-items .f-del{width:34px;height:34px;padding:0;display:inline-grid;place-items:center}
+  .no-stock{position:absolute;left:8px;right:8px;top:57px;min-height:16px;font-size:11.5px;margin:0;color:var(--text-2);line-height:1.35;white-space:normal}
+  .no-add{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+  .no-add select{flex:1;min-width:260px;width:auto}
+  .no-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .no-group{border:1px solid var(--border);border-radius:12px;padding:14px;background:var(--bg)}
+  .no-group h4{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2)}
+  .no-group .no-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .no-summary{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start;margin-bottom:18px}
+  .no-summary-note{padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);font-size:12px;color:var(--text-2)}
+  .no-tot{margin:0;max-width:none;padding:16px 18px}
+  .no-tot .kv{padding:5px 0}
+  .no-tot .grand{border-top:1px solid var(--border);margin-top:8px;padding-top:10px;font-weight:800;font-size:17px}
+  .no-actions{position:sticky;bottom:0;z-index:3;margin:0 -22px;padding:14px 22px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .no-actions .no-action-note{margin-left:auto;font-size:11.5px;color:var(--text-2);max-width:480px;text-align:right}
+  .no-stock{font-size:11.5px;color:var(--text-2)}
   .no-stock.bad{color:#dc2b3d;font-weight:600}
   .no-stock.ok{color:#0a7a3d}
   .tag-manual{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;padding:1px 6px;margin-left:6px;
     border-radius:6px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border);vertical-align:middle}
-  @media(max-width:700px){.no-grid{grid-template-columns:1fr 1fr}.no-grid .span3{grid-column:span 2}}
+  @media(max-width:850px){
+    .no-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.no-grid .span3,.no-grid .span4{grid-column:1/-1}
+    .no-status-grid,.no-summary{grid-template-columns:1fr}.no-actions{align-items:flex-start;flex-wrap:wrap}.no-actions .no-action-note{width:100%;max-width:none;margin-left:0;text-align:left}
+  }
+  @media(max-width:560px){
+    .modal.wide{width:100vw;max-width:100vw;max-height:100vh;height:100vh;border-radius:0}
+    .modal.wide .modal-body{padding:14px 14px 0}.no-sec{padding:14px}.no-grid,.no-group .no-grid{grid-template-columns:1fr}.no-grid .span2,.no-grid .span3,.no-grid .span4{grid-column:1}
+    .no-customer-search{align-items:stretch;flex-direction:column}.no-actions{margin:0 -14px;padding:12px 14px}
+  }
 
   /* Royal Mail modal — wider to fit address grid */
   #rmModal{width:530px}
@@ -252,6 +286,11 @@
   .cp-code-input{text-transform:uppercase}
   .btn-xs{padding:4px 8px;font-size:12px;border-radius:6px}
   .cp-sub{font-size:12px}
+
+.phone-combo{display:flex;gap:8px;align-items:stretch}
+.phone-combo .phone-code{width:132px;flex:0 0 132px}
+.phone-combo .phone-number{flex:1;min-width:0}
+@media(max-width:620px){.phone-combo .phone-code{width:118px;flex-basis:118px}}
 </style>
 </head>
 <body>
@@ -588,88 +627,153 @@
   <div class="modal-body">
 
     <div class="no-sec">
-      <h3>1 · Customer <span id="noBadge"></span></h3>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="field no-suggest" style="flex:1">
+      <h3>Customer <span id="noBadge"></span></h3>
+      <div class="no-customer-search">
+        <div class="field no-suggest">
           <label>Find existing customer (name, email or phone)</label>
           <input id="noSearch" placeholder="Start typing to find a customer…" autocomplete="off">
           <div class="no-results hide" id="noResults"></div>
         </div>
-        <button type="button" class="btn-soft" id="noNewCust" style="white-space:nowrap">+ Add new customer</button>
+        <button type="button" class="btn-soft" id="noNewCust">+ Add new customer</button>
       </div>
 
-      <!-- hidden until a customer is picked or "Add new customer" is clicked -->
-      <div id="noCustBox" class="hide" style="margin-top:12px">
+      <div id="noCustBox" class="hide no-subcard">
+        <p class="no-subtitle">Customer details</p>
         <div class="no-grid">
+          <div class="span2"><label>First name *</label><input id="noFirst"></div>
+          <div class="span2"><label>Last name *</label><input id="noLast"></div>
           <div class="span2"><label>Email *</label><input id="noEmail" type="email" placeholder="customer@example.com"></div>
-          <div><label>Phone</label><input id="noPhone"></div>
-          <div><label>First name *</label><input id="noFirst"></div>
-          <div><label>Last name *</label><input id="noLast"></div>
-          <div><label>Country *</label><input id="noCountry" value="United Kingdom"></div>
+          <div class="span2"><label>Phone</label><div class="phone-combo">
+      <select id="noPhoneCode" class="phone-code" aria-label="Billing phone country code"></select>
+      <input id="noPhone" class="phone-number" type="tel" placeholder="Phone number">
+    </div></div>
           <div class="span2"><label>Address line 1 *</label><input id="noAddr1"></div>
-          <div><label>Address line 2</label><input id="noAddr2"></div>
+          <div class="span2"><label>Address line 2</label><input id="noAddr2"></div>
           <div><label>City *</label><input id="noCity"></div>
           <div><label>Postcode *</label><input id="noPost"></div>
+          <div class="span2"><label>Country *</label><select id="noCountry"><option value="">Loading countries…</option></select></div>
         </div>
         <div class="muted" id="noCustStatus" style="margin-top:8px;font-size:12.5px"></div>
-        <div class="modal-check-row" id="noSaveRow" style="margin-top:8px">
+        <div class="modal-check-row" id="noSaveRow" style="margin-top:10px">
           <input type="checkbox" id="noSave" checked><label for="noSave">Save as a new customer (so they appear in the list next time)</label>
         </div>
         <div class="modal-check-row" style="margin-top:8px">
           <input type="checkbox" id="noDiff"><label for="noDiff">Ship to a different address</label>
         </div>
-        <div class="no-grid hide" id="noShipBox" style="margin-top:10px">
-          <div><label>Ship first name</label><input id="nsFirst"></div>
-          <div><label>Ship last name</label><input id="nsLast"></div>
-          <div><label>Ship country</label><input id="nsCountry"></div>
-          <div class="span2"><label>Ship address line 1</label><input id="nsAddr1"></div>
-          <div><label>Ship address line 2</label><input id="nsAddr2"></div>
-          <div><label>Ship city</label><input id="nsCity"></div>
-          <div><label>Ship postcode</label><input id="nsPost"></div>
+        <div class="no-subcard hide" id="noShipBox">
+          <p class="no-subtitle">Alternative shipping address</p>
+          <div class="no-grid">
+            <div class="span2"><label>Ship first name</label><input id="nsFirst"></div>
+            <div class="span2"><label>Ship last name</label><input id="nsLast"></div>
+            <div class="span2"><label>Email</label><input id="nsEmail" type="email" placeholder="customer@example.com"></div>
+            <div class="span2"><label>Ship phone</label><div class="phone-combo">
+              <select id="nsPhoneCode" class="phone-code" aria-label="Shipping phone country code"></select>
+              <input id="nsPhone" class="phone-number" type="tel" placeholder="Phone number">
+            </div></div>
+            <div class="span2"><label>Ship country</label><select id="nsCountry"><option value="">Select country…</option></select></div>
+            <div class="span2"><label>Ship address line 1</label><input id="nsAddr1"></div>
+            <div class="span2"><label>Ship address line 2</label><input id="nsAddr2"></div>
+            <div><label>Ship city</label><input id="nsCity"></div>
+            <div><label>Ship postcode</label><input id="nsPost"></div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="no-sec">
-      <h3>2 · Items</h3>
-      <table class="no-items">
-        <thead><tr><th style="width:38%">Item</th><th>Variant</th><th style="width:100px">Unit price</th><th style="width:70px">Qty</th><th style="width:90px;text-align:right">Total</th><th style="width:36px"></th></tr></thead>
-        <tbody id="noItemRows"></tbody>
-      </table>
+      <h3>Items</h3>
+      <div class="no-items-wrap">
+        <table class="no-items">
+          <colgroup>
+            <col style="width:38%">
+            <col style="width:28%">
+            <col style="width:11%">
+            <col style="width:8%">
+            <col style="width:10%">
+            <col style="width:5%">
+          </colgroup>
+          <thead><tr><th>Item</th><th>Variant</th><th>Unit price</th><th>Qty</th><th style="text-align:right">Total</th><th></th></tr></thead>
+          <tbody id="noItemRows"></tbody>
+        </table>
+      </div>
       <div class="no-add">
         <select id="noProdPick"><option value="">Loading products…</option></select>
         <button type="button" class="btn-soft" id="noAddProd">+ Add product</button>
         <button type="button" class="btn-ghost" id="noAddCustom">+ Custom item</button>
       </div>
-      <div class="modal-check-row" style="margin-top:10px">
-        <input type="checkbox" id="noStock" checked><label for="noStock">Check &amp; deduct stock for catalogue products</label>
+      <div class="modal-check-row" style="margin-top:12px">
+        <input type="checkbox" id="noStock" checked><label for="noStock">Tick this box to deduct the stock from inventory</label>
       </div>
       <div class="muted" id="noStockHint" style="font-size:12px;margin-top:4px"></div>
     </div>
 
     <div class="no-sec">
-      <h3>3 · Shipping, discount &amp; status</h3>
-      <div class="no-grid">
-        <div><label>Shipping cost (£)</label><input id="noShipAmt" type="number" min="0" step="0.01" value="0"></div>
-        <div><label>Discount (£)</label><input id="noDisc" type="number" min="0" step="0.01" value="0"></div>
-        <div><label>Carrier (optional)</label><input id="noCarrier" placeholder="e.g. FedEx"></div>
-        <div><label>Payment</label>
-          <select id="noPayStatus"><option value="paid">Paid (settled offline)</option><option value="pending">Not paid yet</option></select></div>
-        <div><label>Delivery status</label>
-          <select id="noDelStatus"><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>
-        <div><label>Shipping method (optional)</label><input id="noMethod" placeholder="e.g. FedEx Priority"></div>
-        <div class="span3"><label>Order notes (optional)</label><textarea id="noNotes" rows="2"></textarea></div>
+      <h3>Shipping, discount &amp; status</h3>
+      <div class="no-status-grid">
+        <div class="no-group">
+          <h4>Charges &amp; shipping</h4>
+          <div class="no-grid">
+            <div>
+              <label>Discount type</label>
+              <select id="noDiscType">
+                <option value="fixed">Fixed (£)</option>
+                <option value="percentage">Percentage (%)</option>
+              </select>
+            </div>
+            <div>
+              <label id="noDiscLabel">Discount value (£)</label>
+              <input id="noDisc" type="number" min="0" step="0.01" value="0">
+            </div>
+            <div>
+              <label>Carrier</label>
+              <select id="noCarrier">
+                <option value="">Select carrier…</option>
+                <option value="FedEx">FedEx</option>
+                <option value="Royal Mail">RoyalMail</option>
+              </select>
+            </div>
+            <div>
+              <label>Shipping method</label>
+              <select id="noMethod" disabled>
+                <option value="">Select carrier first…</option>
+              </select>
+              <div class="muted" id="noMethodDesc" style="font-size:11.5px;margin-top:5px;line-height:1.4"></div>
+            </div>
+            <div class="span2">
+              <label>Shipping cost (£)</label>
+              <input id="noShipAmt" type="number" min="0" step="0.01" value="0">
+              <div class="modal-check-row" style="margin-top:8px">
+                <input type="checkbox" id="noIncludeShipping" checked>
+                <label for="noIncludeShipping">Include shipping cost in order</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="no-group">
+          <h4>Order status</h4>
+          <div class="no-grid">
+            <div><label>Payment</label><select id="noPayStatus"><option value="paid">Paid (settled offline)</option><option value="pending">Not paid yet</option></select></div>
+            <div><label>Delivery status</label><select id="noDelStatus"><option>pending</option><option>processing</option><option>shipped</option><option>delivered</option><option>cancelled</option></select></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <label>Order notes (optional)</label>
+        <textarea id="noNotes" rows="4" placeholder="Add any internal or delivery notes for this order…"></textarea>
       </div>
     </div>
 
-    <div class="no-tot panel" id="noTot"></div>
+    <div class="no-summary">
+      <div class="no-summary-note">Review the customer, items, shipping and order status before creating the order. Catalogue stock is checked and deducted only when the stock option above is enabled.</div>
+      <div class="no-tot panel" id="noTot"></div>
+    </div>
 
-    <div class="actions-row">
+    <div class="err" id="noErr"></div>
+    <div class="no-actions">
       <button type="button" id="noSubmit">Create order</button>
       <button type="button" class="btn-ghost" id="noCancel">Cancel</button>
+      <div class="no-action-note">No emails are sent when a manual order is created. Customers still get the normal shipped / delivered emails when you update delivery.</div>
     </div>
-    <div class="err" id="noErr"></div>
-    <div class="muted" style="font-size:12px;margin-top:6px">No emails are sent when a manual order is created. Customers still get the normal shipped / delivered emails when you update delivery.</div>
   </div>
 </div>
 
@@ -898,8 +1002,9 @@ function openDrawer(ref){
       ${hasFedExShipment ? `
         <div class="kv"><span class="k">Service</span><span>${esc(o.shipping_method_name || o.shipping_method_code || 'FedEx')}</span></div>
         <div class="kv"><span class="k">Tracking</span><span style="font-family:ui-monospace,Menlo,monospace">${esc(o.shipping_tracking_no)}</span></div>
-        <div style="margin-top:12px">
+        <div class="actions-row" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
           <button type="button" class="btn-sm btn-ghost" id="aFedExLabel">📄 View FedEx Label</button>
+          <button type="button" class="btn-danger btn-sm" id="aCancelFedEx">✕ Cancel FedEx Shipment</button>
         </div>
       ` : canCreateFedEx ? `
         <div class="kv"><span class="k">Service</span><span>${esc(o.shipping_method_name || o.shipping_method_code || 'FedEx')}</span></div>
@@ -1031,6 +1136,29 @@ function openDrawer(ref){
       toast(e.message, 'bad');
     } finally {
       fedExLabelBtn.disabled = false;
+    }
+  };
+
+  const fedExCancelBtn = $('#aCancelFedEx');
+  if (fedExCancelBtn) fedExCancelBtn.onclick = async () => {
+    if (!confirm('Cancel this FedEx shipment? This will cancel it with FedEx and remove the tracking number from the NadGo order.')) return;
+    fedExCancelBtn.disabled = true;
+    fedExCancelBtn.textContent = 'Cancelling…';
+    $('#dErr').textContent = '';
+    try {
+      await api('admin_cancel_fedex_shipment', {
+        method: 'POST',
+        json: { ref: o.order_ref }
+      });
+      toast('FedEx shipment cancelled', 'ok');
+      closeDrawer();
+      await loadOrders();
+      openDrawer(o.order_ref);
+    } catch(e) {
+      $('#dErr').textContent = e.message;
+      toast(e.message, 'bad');
+      fedExCancelBtn.disabled = false;
+      fedExCancelBtn.textContent = '✕ Cancel FedEx Shipment';
     }
   };
 
@@ -1788,13 +1916,84 @@ const NO_FIELDS = { email:'#noEmail', phone:'#noPhone', first_name:'#noFirst', l
   address1:'#noAddr1', address2:'#noAddr2', city:'#noCity', postcode:'#noPost', country:'#noCountry' };
 const noIsUk = c => ['united kingdom','uk','gb','great britain'].includes(String(c||'').trim().toLowerCase());
 
+const NO_DIAL_CODES = [
+  ['United Kingdom','GB','🇬🇧','+44'],['United States','US','🇺🇸','+1'],['Canada','CA','🇨🇦','+1'],
+  ['Pakistan','PK','🇵🇰','+92'],['Ireland','IE','🇮🇪','+353'],['France','FR','🇫🇷','+33'],
+  ['Germany','DE','🇩🇪','+49'],['Italy','IT','🇮🇹','+39'],['Spain','ES','🇪🇸','+34'],
+  ['Portugal','PT','🇵🇹','+351'],['Netherlands','NL','🇳🇱','+31'],['Belgium','BE','🇧🇪','+32'],
+  ['Luxembourg','LU','🇱🇺','+352'],['Switzerland','CH','🇨🇭','+41'],['Austria','AT','🇦🇹','+43'],
+  ['Poland','PL','🇵🇱','+48'],['Czech Republic','CZ','🇨🇿','+420'],['Czechia','CZ','🇨🇿','+420'],
+  ['Slovakia','SK','🇸🇰','+421'],['Hungary','HU','🇭🇺','+36'],['Romania','RO','🇷🇴','+40'],
+  ['Bulgaria','BG','🇧🇬','+359'],['Greece','GR','🇬🇷','+30'],['Croatia','HR','🇭🇷','+385'],
+  ['Slovenia','SI','🇸🇮','+386'],['Denmark','DK','🇩🇰','+45'],['Sweden','SE','🇸🇪','+46'],
+  ['Norway','NO','🇳🇴','+47'],['Finland','FI','🇫🇮','+358'],['Iceland','IS','🇮🇸','+354'],
+  ['Estonia','EE','🇪🇪','+372'],['Latvia','LV','🇱🇻','+371'],['Lithuania','LT','🇱🇹','+370'],
+  ['Cyprus','CY','🇨🇾','+357'],['Malta','MT','🇲🇹','+356'],['Ukraine','UA','🇺🇦','+380'],
+  ['Turkey','TR','🇹🇷','+90'],['United Arab Emirates','AE','🇦🇪','+971'],['Saudi Arabia','SA','🇸🇦','+966'],
+  ['Qatar','QA','🇶🇦','+974'],['Kuwait','KW','🇰🇼','+965'],['Bahrain','BH','🇧🇭','+973'],
+  ['Oman','OM','🇴🇲','+968'],['India','IN','🇮🇳','+91'],['Bangladesh','BD','🇧🇩','+880'],
+  ['Sri Lanka','LK','🇱🇰','+94'],['China','CN','🇨🇳','+86'],['Hong Kong','HK','🇭🇰','+852'],
+  ['Japan','JP','🇯🇵','+81'],['South Korea','KR','🇰🇷','+82'],['Singapore','SG','🇸🇬','+65'],
+  ['Malaysia','MY','🇲🇾','+60'],['Thailand','TH','🇹🇭','+66'],['Indonesia','ID','🇮🇩','+62'],
+  ['Philippines','PH','🇵🇭','+63'],['Australia','AU','🇦🇺','+61'],['New Zealand','NZ','🇳🇿','+64'],
+  ['South Africa','ZA','🇿🇦','+27'],['Brazil','BR','🇧🇷','+55'],['Mexico','MX','🇲🇽','+52']
+];
+function noDialForCountry(country) {
+  const n = String(country||'').trim().toLowerCase();
+  if (['uk','gb','great britain'].includes(n)) return NO_DIAL_CODES[0];
+  return NO_DIAL_CODES.find(x => x[0].toLowerCase() === n || x[1].toLowerCase() === n) || null;
+}
+function noFillDialSelect(id) {
+  $(id).innerHTML = NO_DIAL_CODES.map(x =>
+    `<option value="${x[3]}" data-country="${x[0]}">${x[2]} ${x[3]}</option>`
+  ).join('');
+}
+function noSetDialFromCountry(selectId, country) {
+  const d = noDialForCountry(country);
+  if (d) $(selectId).value = d[3];
+}
+function noSplitPhone(full, codeSelectId, numberInputId, country) {
+  let v = String(full||'').trim().replace(/[^\d+]/g,'');
+  const byCountry = noDialForCountry(country);
+  let hit = [...NO_DIAL_CODES].sort((a,b)=>b[3].length-a[3].length).find(x => v.startsWith(x[3]));
+  if (!hit && byCountry) hit = byCountry;
+  if (hit) {
+    $(codeSelectId).value = hit[3];
+    if (v.startsWith(hit[3])) v = v.slice(hit[3].length);
+  }
+  $(numberInputId).value = v.replace(/^0+/, '');
+}
+function noInternationalPhone(codeId, numberId) {
+  const code = $(codeId).value || '';
+  let num = $(numberId).value.trim().replace(/\D/g,'').replace(/^0+/, '');
+  return num ? code + num : '';
+}
+noFillDialSelect('#noPhoneCode');
+noFillDialSelect('#nsPhoneCode');
+$('#noPhoneCode').value = '+44';
+$('#nsPhoneCode').value = '+44';
+
+
 $('#newOrderBtn').onclick = openNoModal;
 $('#noClose').onclick = $('#noCancel').onclick = $('#noBg').onclick = closeNoModal;
-$('#noDiff').onchange = () => $('#noShipBox').classList.toggle('hide', !$('#noDiff').checked);
+$('#noDiff').onchange = () => {
+  $('#noShipBox').classList.toggle('hide', !$('#noDiff').checked);
+  if ($('#noDiff').checked) {
+    if (!$('#nsEmail').value.trim()) $('#nsEmail').value = $('#noEmail').value.trim();
+    if (!$('#nsPhone').value.trim()) {
+      $('#nsPhoneCode').value = $('#noPhoneCode').value;
+      $('#nsPhone').value = $('#noPhone').value;
+    }
+  }
+};
 $('#noNewCust').onclick = () => {
   NO_CUSTOMER = null;
   Object.values(NO_FIELDS).forEach(sel => $(sel).value = '');
-  $('#noCountry').value = 'United Kingdom';
+  const ukCountry = NO_SHIPPING_COUNTRIES.find(c =>
+    ['united kingdom','uk','gb','great britain'].includes(String(c).toLowerCase())
+  );
+  $('#noCountry').value = ukCountry || '';
+  noSetDialFromCountry('#noPhoneCode', $('#noCountry').value);
   $('#noSearch').value = ''; $('#noResults').classList.add('hide');
   $('#noCustBox').classList.remove('hide');
   noSetCustomerUi(); noTotals();
@@ -1805,12 +2004,16 @@ $('#noAddProd').onclick = noAddCatalogueItem;
 ['#noShipAmt','#noDisc','#noCountry','#nsCountry','#noDiff'].forEach(id => $(id).addEventListener('input', noTotals));
 $('#noDiff').addEventListener('change', noTotals);
 
-function openNoModal() {
+async function openNoModal() {
   NO_ITEMS = []; NO_CUSTOMER = null; NO_PRODUCTS = null; // reload catalogue so stock numbers are fresh
   Object.values(NO_FIELDS).forEach(id => $(id).value = '');
-  $('#noCountry').value = 'United Kingdom';
-  ['#nsFirst','#nsLast','#nsAddr1','#nsAddr2','#nsCity','#nsPost','#nsCountry','#noNotes','#noCarrier','#noMethod','#noSearch'].forEach(id => $(id).value = '');
-  $('#noShipAmt').value = '0'; $('#noDisc').value = '0';
+  await noLoadCountries();
+  ['#nsFirst','#nsLast','#nsEmail','#nsPhone','#nsAddr1','#nsAddr2','#nsCity','#nsPost','#noNotes','#noCarrier','#noSearch'].forEach(id => $(id).value = '');
+  $('#noPhoneCode').value = '+44'; $('#nsPhoneCode').value = '+44';
+  $('#noMethod').innerHTML = '<option value="">Select carrier first…</option>';
+  $('#noMethod').disabled = true;
+  $('#noMethodDesc').textContent = '';
+  $('#noShipAmt').value = '0'; $('#noDisc').value = '0'; $('#noDiscType').value = 'fixed'; noUpdateDiscountUi();
   $('#noPayStatus').value = 'paid'; $('#noDelStatus').value = 'pending';
   $('#noDiff').checked = false; $('#noShipBox').classList.add('hide');
   $('#noSave').checked = true; $('#noStock').checked = true;
@@ -1843,13 +2046,23 @@ async function noSearchCustomers() {
     box.querySelectorAll('.opt[data-i]').forEach(el => el.onclick = () => noPickCustomer(list[+el.dataset.i]));
   } catch (e) { if (e.status === 401) return $('#logout').click(); }
 }
-function noPickCustomer(u) {
+async function noPickCustomer(u) {
   NO_CUSTOMER = u;
   $('#noCustBox').classList.remove('hide');
   for (const [k, sel] of Object.entries(NO_FIELDS)) $(sel).value = u[k] || '';
-  if (!$('#noCountry').value) $('#noCountry').value = 'United Kingdom';
+  noSplitPhone(u.phone || '', '#noPhoneCode', '#noPhone', u.country || $('#noCountry').value);
+
+  // Saved customer data may use a UK alias while the dropdown contains the
+  // database's canonical country label. Normalise it before choosing carrier.
+  if (noIsUk(u.country)) {
+    const ukCountry = NO_SHIPPING_COUNTRIES.find(c => noIsUk(c));
+    if (ukCountry) $('#noCountry').value = ukCountry;
+  }
+
   $('#noSearch').value = ''; $('#noResults').classList.add('hide');
-  noSetCustomerUi(); noTotals();
+  noSetCustomerUi();
+  await noAutoSelectCarrierForCountry();
+  noTotals();
 }
 function noSetCustomerUi() {
   $('#noBadge').innerHTML = NO_CUSTOMER ? '<span class="no-badge">Existing customer</span>' : '';
@@ -1951,24 +2164,179 @@ $('#noStock').onchange = noStockHints;
 
 function noRefreshLine(i) { const it = NO_ITEMS[i]; $('#noLt' + i).textContent = fmtMoney(it.unit_price * it.quantity, 'GBP'); noTotals(); }
 
+// -- manual-order countries (only countries configured in shipping_rates) --
+let NO_SHIPPING_COUNTRIES = [];
+async function noLoadCountries() {
+  try {
+    const res = await api('admin_shipping_countries');
+    NO_SHIPPING_COUNTRIES = res.countries || [];
+    const opts = '<option value="">Select country…</option>' +
+      NO_SHIPPING_COUNTRIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    $('#noCountry').innerHTML = opts;
+    $('#nsCountry').innerHTML = opts;
+    const uk = NO_SHIPPING_COUNTRIES.find(c => ['united kingdom','uk','gb','great britain'].includes(String(c).toLowerCase()));
+    if (uk) $('#noCountry').value = uk;
+    await noAutoSelectCarrierForCountry();
+  } catch (e) {
+    $('#noCountry').innerHTML = '<option value="">Could not load countries</option>';
+    $('#nsCountry').innerHTML = '<option value="">Could not load countries</option>';
+  }
+}
+
+// -- manual-order carrier / shipping method -------------------------------
+const NO_FEDEX_METHODS = [
+  { code:'FEDEX_PRIORITY', name:'FedEx Priority', rate:4.99,
+    description:'Priority delivery — typically the next business day, by end of day.' },
+  { code:'FEDEX_PRIORITY_EXPRESS', name:'FedEx Priority Express', rate:8.99,
+    description:'Express delivery — typically the next business day, before noon.' },
+  { code:'FEDEX_FIRST', name:'FedEx First', rate:12.99,
+    description:'Early delivery — typically the next business day, in the morning.' }
+];
+let NO_SHIPPING_METHODS = [];
+
+function noShippingCountry() {
+  return ($('#noDiff').checked ? $('#nsCountry').value : $('#noCountry').value).trim();
+}
+function noSetMethodOptions(methods, placeholder='Select shipping method…') {
+  NO_SHIPPING_METHODS = methods || [];
+  const sel = $('#noMethod');
+  sel.innerHTML = `<option value="">${esc(placeholder)}</option>` +
+    NO_SHIPPING_METHODS.map(m =>
+      `<option value="${esc(m.code)}" data-rate="${Number(m.rate)||0}">${esc(m.name)} — ${fmtMoney(m.rate)}</option>`
+    ).join('');
+  sel.disabled = !NO_SHIPPING_METHODS.length;
+  $('#noMethodDesc').textContent = '';
+}
+async function noAutoSelectCarrierForCountry() {
+  const country = noShippingCountry();
+  if (!country) {
+    $('#noCarrier').value = '';
+    noSetMethodOptions([], 'Select country first…');
+    $('#noShipAmt').value = '0';
+    noTotals();
+    return;
+  }
+
+  if (noIsUk(country)) {
+    $('#noCarrier').value = 'FedEx';
+    await noLoadShippingMethods();
+
+    // Default UK manual orders to FedEx Priority.
+    $('#noMethod').value = 'FEDEX_PRIORITY';
+    noApplySelectedShipping();
+    return;
+  }
+
+  $('#noCarrier').value = 'Royal Mail';
+  await noLoadShippingMethods();
+
+  // If RoyalMail has rates for the selected country, select the first
+  // configured DB method automatically and apply its price.
+  if (NO_SHIPPING_METHODS.length) {
+    $('#noMethod').value = NO_SHIPPING_METHODS[0].code;
+    noApplySelectedShipping();
+  } else {
+    $('#noShipAmt').value = '0';
+    noTotals();
+  }
+}
+
+async function noLoadShippingMethods() {
+  const carrier = $('#noCarrier').value;
+  $('#noShipAmt').readOnly = false;
+  if (!carrier) {
+    noSetMethodOptions([], 'Select carrier first…');
+    $('#noShipAmt').value = '0';
+    noTotals();
+    return;
+  }
+
+  if (carrier === 'FedEx') {
+    noSetMethodOptions(NO_FEDEX_METHODS);
+    return;
+  }
+
+  const country = noShippingCountry();
+  if (!country) {
+    noSetMethodOptions([], 'Enter shipping country first…');
+    return;
+  }
+
+  noSetMethodOptions([], 'Loading RoyalMail rates…');
+  try {
+    const res = await api('admin_get_shipping_rates&country=' + encodeURIComponent(country));
+    const methods = (res.shipping_methods || []).map(m => ({
+      code: m.code, name: m.name, rate: Number(m.rate) || 0,
+      description: m.free_threshold != null
+        ? `Free from ${fmtMoney(m.free_threshold)}.`
+        : 'RoyalMail rate from the shipping-rates database.'
+    }));
+    noSetMethodOptions(methods, methods.length ? 'Select shipping method…' : 'No RoyalMail rates available');
+  } catch (e) {
+    noSetMethodOptions([], 'Could not load RoyalMail rates');
+    $('#noMethodDesc').textContent = e.message || 'Could not load shipping rates.';
+  }
+}
+function noApplySelectedShipping() {
+  const code = $('#noMethod').value;
+  const method = NO_SHIPPING_METHODS.find(m => m.code === code);
+  if (!method) {
+    $('#noMethodDesc').textContent = '';
+    return;
+  }
+  $('#noShipAmt').value = Number(method.rate || 0).toFixed(2);
+  $('#noMethodDesc').textContent = method.description || '';
+  noTotals();
+}
+$('#noCarrier').addEventListener('change', noLoadShippingMethods);
+$('#noMethod').addEventListener('change', noApplySelectedShipping);
+$('#noCountry').addEventListener('change', async () => {
+  noSetDialFromCountry('#noPhoneCode', $('#noCountry').value);
+  await noAutoSelectCarrierForCountry();
+});
+$('#nsCountry').addEventListener('change', async () => {
+  noSetDialFromCountry('#nsPhoneCode', $('#nsCountry').value);
+  await noAutoSelectCarrierForCountry();
+});
+$('#noDiff').addEventListener('change', noAutoSelectCarrierForCountry);
+
 // -- totals preview (server recalculates the real numbers) --
 function noCalc() {
   const sub  = Math.round(NO_ITEMS.reduce((a, i) => a + i.unit_price * i.quantity, 0) * 100) / 100;
-  const ship = Math.max(0, parseFloat($('#noShipAmt').value) || 0);
-  const disc = Math.min(sub, Math.max(0, parseFloat($('#noDisc').value) || 0));
+  const quotedShip = Math.max(0, parseFloat($('#noShipAmt').value) || 0);
+  const includeShipping = $('#noIncludeShipping').checked;
+  const ship = includeShipping ? quotedShip : 0;
+  const discType = $('#noDiscType').value;
+  const discValue = Math.max(0, parseFloat($('#noDisc').value) || 0);
+  const disc = discType === 'percentage'
+    ? Math.min(sub, Math.round(sub * Math.min(100, discValue) / 100 * 100) / 100)
+    : Math.min(sub, discValue);
   const country = $('#noDiff').checked ? $('#nsCountry').value : $('#noCountry').value;
   const vat = noIsUk(country) ? Math.round(Math.max(0, sub - disc + ship) * (0.2 / 1.2) * 100) / 100 : 0;
-  return { sub, ship, disc, vat, total: Math.max(0, Math.round((sub + ship - disc) * 100) / 100), uk: noIsUk(country) };
+  return { sub, quotedShip, ship, includeShipping, disc, discType, discValue, vat,
+    total: Math.max(0, Math.round((sub + ship - disc) * 100) / 100), uk: noIsUk(country) };
 }
 function noTotals() {
   const t = noCalc();
   $('#noTot').innerHTML =
     `<div class="kv"><span class="k">Subtotal</span><span>${fmtMoney(t.sub)}</span></div>` +
-    `<div class="kv"><span class="k">Shipping</span><span>${fmtMoney(t.ship)}</span></div>` +
-    (t.disc ? `<div class="kv"><span class="k">Discount</span><span>−${fmtMoney(t.disc)}</span></div>` : '') +
-    (t.uk ? `<div class="kv"><span class="k">incl. VAT (20%)</span><span>${fmtMoney(t.vat)}</span></div>` : '') +
-    `<div class="kv grand"><span>Total</span><span>${fmtMoney(t.total)}</span></div>`;
+    `<div class="kv"><span class="k">Shipping${t.includeShipping ? '' : ' (not included)'}</span><span>${fmtMoney(t.quotedShip)}</span></div>` +
+    (t.disc ? `<div class="kv"><span class="k">Discount${t.discType === 'percentage' ? ' (' + Math.min(100,t.discValue) + '%)' : ''}</span><span>−${fmtMoney(t.disc)}</span></div>` : '') +
+    `<div class="kv grand"><span>Total</span><span>${fmtMoney(t.total)}${t.uk ? ` <small style="font-size:12px;font-weight:500;color:var(--text-2);white-space:nowrap">(includes ${fmtMoney(t.vat)} VAT)</small>` : ''}</span></div>`;
 }
+
+$('#noDisc').addEventListener('input', noTotals);
+$('#noIncludeShipping').addEventListener('change', noTotals);
+
+function noUpdateDiscountUi() {
+  const pct = $('#noDiscType').value === 'percentage';
+  $('#noDiscLabel').textContent = pct ? 'Discount value (%)' : 'Discount value (£)';
+  $('#noDisc').max = pct ? '100' : '';
+  $('#noDisc').step = pct ? '0.01' : '0.01';
+  if (pct && (parseFloat($('#noDisc').value) || 0) > 100) $('#noDisc').value = '100';
+  noTotals();
+}
+$('#noDiscType').addEventListener('change', noUpdateDiscountUi);
 
 // -- submit --
 $('#noSubmit').onclick = async () => {
@@ -1978,10 +2346,12 @@ $('#noSubmit').onclick = async () => {
   }
   const body = { save_customer: $('#noSave').checked, ship_to_different_address: $('#noDiff').checked };
   for (const [k, sel] of Object.entries(NO_FIELDS)) body[k] = $(sel).value.trim();
+  body.phone = noInternationalPhone('#noPhoneCode', '#noPhone');
   if ($('#noDiff').checked) Object.assign(body, {
     ship_first_name: $('#nsFirst').value.trim(), ship_last_name: $('#nsLast').value.trim(),
     ship_address1: $('#nsAddr1').value.trim(), ship_address2: $('#nsAddr2').value.trim(),
-    ship_city: $('#nsCity').value.trim(), ship_postcode: $('#nsPost').value.trim(), ship_country: $('#nsCountry').value.trim() });
+    ship_city: $('#nsCity').value.trim(), ship_postcode: $('#nsPost').value.trim(), ship_country: $('#nsCountry').value.trim(),
+    ship_phone: noInternationalPhone('#nsPhoneCode', '#nsPhone') });
   body.items = NO_ITEMS.map(i => ({ product_name: i.product_name.trim(), variant: (i.variant||'').trim(), dosage: i.dosage||'',
     purchase_type: i.purchase_type||'', sku: i.sku||'', image_url: i.image_url||'', unit_price: i.unit_price, quantity: i.quantity }));
   if (!body.items.length) { $('#noErr').textContent = 'Add at least one item.'; return; }
@@ -1989,8 +2359,14 @@ $('#noSubmit').onclick = async () => {
   const sp = noStockProblems();
   if (sp.length) { $('#noErr').textContent = 'Not enough stock: ' + sp.join('; ') + '. Fix the quantity, or untick “Check & deduct stock”.'; return; }
   Object.assign(body, {
-    shipping_amount: parseFloat($('#noShipAmt').value) || 0, discount_amount: parseFloat($('#noDisc').value) || 0,
-    shipping_carrier: $('#noCarrier').value.trim(), shipping_method_name: $('#noMethod').value.trim(),
+    shipping_amount: parseFloat($('#noShipAmt').value) || 0,
+    include_shipping_cost: $('#noIncludeShipping').checked,
+    discount_type: $('#noDiscType').value,
+    discount_value: parseFloat($('#noDisc').value) || 0,
+    discount_amount: noCalc().disc,
+    shipping_carrier: $('#noCarrier').value.trim(),
+    shipping_method_code: $('#noMethod').value.trim(),
+    shipping_method_name: ($('#noMethod').selectedOptions[0]?.textContent || '').replace(/\s+—\s+£[\d,.]+.*$/, '').trim(),
     payment_status: $('#noPayStatus').value, delivery_status: $('#noDelStatus').value,
     order_notes: $('#noNotes').value.trim(), deduct_stock: $('#noStock').checked });
 

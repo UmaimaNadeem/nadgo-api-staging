@@ -7,7 +7,7 @@
  *
  *   Accounts:  register | login
  *   Customer:  create_order | payment_info | submit_payment
- *              track_orders | get_order | get_profile | update_profile
+ *              track_orders | get_order | get_profile | update_profile | change_password
  *              product_review | contact
  *              create_fena_payment | fena_webhook
  *              create_wallid_payment | wallid_webhook
@@ -128,7 +128,10 @@ try {
     $auth    = new Auth($config);
     $mailer  = new Mailer($config['mail'], $config['brand'] ?? []);
     $uploads = new Uploads($config['uploads']);
-    $limiter   = new RateLimiter($db, $config['rate_limits'] ?? []);
+    // Built-in default for change_password; any value in config.php 'rate_limits' overrides it.
+    $limiter   = new RateLimiter($db, ($config['rate_limits'] ?? []) + [
+        'change_password' => ['limit' => 10, 'window' => 900],   // per IP+email / 15 min (anti brute-force)
+    ]);
     $turnstile = new Turnstile($config['turnstile'] ?? []);
     $logger    = new RequestLog($db, $config['logging'] ?? []);
     $stripe         = new StripeGateway($config['stripe'] ?? []);
@@ -518,6 +521,29 @@ try {
             $b = jsonBody();
             honeypotCheck($b);
             respond(200, ['ok' => true, 'profile' => $service->updateProfile($email, $b)]);
+
+        // ---- change password (logged-in): {current_password, new_password[, confirm_password]} ----
+        case 'change_password':
+            requirePost();
+            $email = $auth->verifySessionToken(header_val('X-Session-Token'));
+            if (!$email) {
+                respond(401, ['ok' => false, 'error' => 'Invalid or expired session. Please log in again.']);
+            }
+            $b = jsonBody();
+            honeypotCheck($b);
+            $limiter->hit('change_password', $clientIp . '|' . strtolower($email));
+            $pick = static function (array $d, array $keys): string {
+                foreach ($keys as $k) {
+                    if (isset($d[$k]) && is_string($d[$k])) return $d[$k];
+                }
+                return '';
+            };
+            respond(200, ['ok' => true] + $service->changePassword(
+                $email,
+                $pick($b, ['current_password', 'old_password', 'currentPassword']),
+                $pick($b, ['new_password', 'newPassword', 'password']),
+                array_key_exists('confirm_password', $b) ? (string) $b['confirm_password'] : null
+            ));
 
         // ---- admin (single admin token) -------------------------------------
         case 'admin_logs':
@@ -1186,7 +1212,8 @@ try {
     }
 
 } catch (ValidationException $e) {
-    respond(422, ['ok' => false, 'error' => $e->getMessage()]);
+    respond(422, ['ok' => false, 'error' => $e->getMessage()]
+        + ($e instanceof FieldValidationException ? ['field' => $e->field] : []));
 } catch (AuthException $e) {
     respond(401, ['ok' => false, 'error' => $e->getMessage()]);
 } catch (ConflictException $e) {
